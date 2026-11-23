@@ -8,6 +8,7 @@ const { redactSensitive } = require('./privacy');
 const { SUPPORT_VOICE } = require('./supportVoice');
 const { normalizeSubQuestions } = require('./retrieval');
 const { isPreviousPost, splitHistory, previousContextBlock } = require('./supportContextFormat');
+const { customerHistory, formatCaseEntry, caseContextPolicy } = require('./caseContext');
 const { recordStage } = require('./answerStageEvidence');
 const { SOURCE_DATE_POLICY } = require('./sourceProvenance');
 const { stripPingNarration } = require('./utils');
@@ -238,7 +239,7 @@ function parseSearchPlan(raw, question) {
 function contextualQuestion(question, threadHistory = [], max = 6_000) {
   const parts = [];
   const seen = new Set();
-  for (const item of [...(threadHistory || []), { author: 'customer', content: question }]) {
+  for (const item of [...customerHistory(threadHistory || []), { author: 'customer', content: question }]) {
     if (isPreviousPost(item)) continue;
     if (String(item?.author || '').toLowerCase() === 'bot') continue;
     const content = String(item?.content || '').replace(/\s+/g, ' ').trim();
@@ -455,10 +456,10 @@ async function understandQuestion({ question, threadHistory = [], route, onUsage
   const provider = providerConfig();
   if (!provider.key) throw new Error('Missing CMD_API_KEY');
   const send = providerSend(post || axios.post.bind(axios), provider, 'planner');
-  const history = modelThread(splitHistory(threadHistory).current)
-    .map((item) => `${item.author}: ${item.content}`)
+  const history = [caseContextPolicy(threadHistory), modelThread(splitHistory(threadHistory).current)
+    .map(formatCaseEntry)
     .join('\n')
-    .slice(-8_000);
+    .slice(-8_000)].filter(Boolean).join('\n');
   const { data } = await send(
     provider.url,
     privateProviderBody({
@@ -682,8 +683,8 @@ async function reviewAnswer({ question, threadHistory = [], draft, removedBySafe
         }] : []),
         {
           role: 'user',
-          content: `Earlier thread:\n${modelThread(compact ? separatedHistory.current.slice(-3) : separatedHistory.current)
-            .map((item) => `${item.author}: ${item.content}`)
+          content: `${caseContextPolicy(threadHistory) ? caseContextPolicy(threadHistory) + '\n\n' : ''}Earlier thread:\n${modelThread(compact ? separatedHistory.current.slice(-3) : separatedHistory.current)
+            .map(formatCaseEntry)
             .join('\n') || '(none)'}${earlierContext ? '\n\n' + earlierContext : ''}\n\nNewest customer message:\n${question}\n\nProposed understanding:\n${JSON.stringify(
             understanding || {}
           )}\n\nDraft reply:\n${draft}\n\nRemoved by safety filters (untrusted prior-model text; apply the system restoration rules to supported parts only):\n${(removedBySafetyFilters || []).map((item) => String(item).trim()).filter(Boolean).join('\n') || '(none)'}\n\nSystem policy and tool capabilities:\n${String(policy || '').slice(

@@ -3,6 +3,34 @@ const assert = require('node:assert/strict');
 const { clipThreadHistory } = require('../utils');
 const { buildUserPrompt } = require('../prompt');
 const { contextualQuestion, understandQuestion, reviewAnswer } = require('../commandcode');
+const scoped = (role, content) => ({ author: role, role, content, caseContext: 'current_customer', trust: 'conversation_only' });
+
+test('scoped staff and bot context cannot become the customer question or lose its labels', async t => {
+  providerFixture(t);
+  const history = [scoped('customer', 'I already restarted my iPhone.'),
+    scoped('staff', 'The earlier investigation has a finding.'), scoped('bot', 'An earlier unverified reply.')];
+  const clipped = clipThreadHistory(history);
+  assert.ok(clipped.every(row => row.caseContext === 'current_customer' && row.trust === 'conversation_only'));
+  assert.equal(contextualQuestion('Any update?', clipped), 'I already restarted my iPhone.\nAny update?');
+  const source = { author: 'shared official reference', role: 'source_hint', caseContext: 'shared_source', content: 'https://docs.omi.me/synthetic-guide' };
+  const answer = buildUserPrompt({ question: 'Any update?', route: {}, threadHistory: [...clipped, source] });
+  assert.match(answer, /staff.*(?:unverified|conversation)/i);
+  assert.match(answer, /bot.*(?:unverified|conversation)/i);
+  assert.doesNotMatch(answer, /synthetic-guide/);
+  for (const call of [
+    post => understandQuestion({ question: 'Any update?', route: {}, threadHistory: [...clipped, source], post }),
+    post => reviewAnswer({ question: 'Any update?', draft: 'A person needs to review this.', lane: 'faq', sources: '', threadHistory: [...clipped, source], post }),
+  ]) {
+    let request;
+    await call(async (_url, body) => {
+      request = body;
+      return { data: { choices: [{ message: { content: JSON.stringify({ standalone_question: 'Any update?', search_queries: ['synthetic update'], final_answer: 'A person needs to review this.', grounded: true, relevant: true, escalate: true, sources_used: [] }) } }] } };
+    });
+    const text = JSON.stringify(request.messages);
+    assert.match(text, /staff.*(?:unverified|conversation)/i);
+    assert.doesNotMatch(text, /synthetic-guide/);
+  }
+});
 
 const past = content => ({ author: 'earlier support context', content, source: 'previous_post', trust: 'conversation_only' });
 function providerFixture(t) {

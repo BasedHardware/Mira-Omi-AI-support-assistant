@@ -1,5 +1,7 @@
 # Mira: master product plan
 
+**Offline integration checkpoint:** this QA branch combines #98 with #100 for the second frozen comparison. It does not advance main, close issues, consume provider quota or authorize release. Per-candidate evidence below remains separate; combined runtime must pass its own integration checks and independent review. After A verifies #98 against130319d, B compares this integration against the exact reviewed #98 runtime. The later PR integration must prove matching runtime/model inputs before reusing B evidence.
+
 ## Current checkpoint — November 23, 2026 (IST)
 
 Fresh GitHub baseline is **130319dfc5b1e62a53970507dbd2c3b0459d18ba**, including #91/#90/#93/#95/#92. Production has not been freshly checked. The October deployment paragraphs below are historical and must not be read as current health evidence. Existing #94/#96 drafts retain their unfinished requirements.
