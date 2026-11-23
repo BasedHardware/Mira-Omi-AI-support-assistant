@@ -101,9 +101,12 @@ function projectCase(messages = [], { customerId, botId, isStaff, excludeId } = 
     } else if (role === 'bot') valid = false;
     const { mentions, anchored, named, group } = address(message);
     if (group || named === null) valid = false;
-    targets.push(...anchored, ...(named || []));
+    // Profiles are mutable even on fetched older Message.author objects.
+    // Names can veto an ID binding, but never establish historical ownership.
+    targets.push(...anchored);
     const unique = new Set(targets);
     const target = unique.size === 1 ? [...unique][0] : '';
+    if ((named || []).some(namedTarget => namedTarget !== target)) valid = false;
     // An in-body mention can contradict a recipient, but cannot create one.
     if (mentions.some(mentioned => mentioned !== target)) valid = false;
     const result = valid && customers.has(target) ? target : '';

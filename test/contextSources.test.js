@@ -19,12 +19,12 @@ test('shared staff prose is withheld; only clean public source pointers survive'
 });
 
 test('a foreign or ambiguous provider-specific staff link cannot become shared guidance', () => {
-  const alice = { id: 'a', author: { id: '2001', username: 'Alice', bot: false }, content: 'Google sign-in fails.' };
-  const bob = { id: 'b', author: { id: '2002', username: 'Bob', bot: false }, content: 'Apple sign-in fails.' };
+  const alice = { id: 'a', createdTimestamp: 1, author: { id: '2001', username: 'Alice', bot: false }, content: 'Google sign-in fails.' };
+  const bob = { id: 'b', createdTimestamp: 2, author: { id: '2002', username: 'Bob', bot: false }, content: 'Apple sign-in fails.' };
   const google = 'https://docs.omi.me/google/synthetic-sign-in';
   assert.deepEqual(sharedSourceHints([alice, bob, staff(`Alice, see ${google} for the Google issue.`)], options), []);
   assert.deepEqual(sharedSourceHints([alice, bob, staff(`Alice and Bob, see ${google}.`)], options), []);
-  assert.deepEqual(sharedSourceHints([alice, bob, staff(`Bob, see ${guide}.`)], options).map(row => row.content), [guide]);
+  assert.deepEqual(sharedSourceHints([alice, bob, { ...staff(`Bob, see ${guide}.`), reference: { messageId: bob.id } }], options).map(row => row.content), [guide]);
 });
 
 test('a staff pointer retrieves catalog evidence rather than becoming evidence itself', async () => {

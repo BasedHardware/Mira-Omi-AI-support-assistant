@@ -11,7 +11,8 @@ const alice = user(ALICE, 'alice');
 const bob = user(BOB, 'bob');
 const staff = user(STAFF, 'support');
 const mira = user(BOT, 'Mira', { bot: true });
-const msg = (id, author, content, extra = {}) => ({ id, author, content, ...extra });
+let timestamp = 1;
+const msg = (id, author, content, extra = {}) => ({ id, author, content, createdTimestamp: timestamp++, ...extra });
 const reply = (id, author, content, target, extra = {}) => msg(id, author, content, {
   reference: { messageId: target }, ...extra,
 });
@@ -34,10 +35,24 @@ test('each human owns only their messages, including when the earlier customer r
   assert.deepEqual(projectCaseHistory(messages, opts({ customerId: BOB })).map(row => row.id), ['b1']);
 });
 
-test('the excluded current message still establishes the customer alias', () => {
+test('a later matching display name cannot inherit an earlier named staff finding', () => {
   const messages = [staffMsg('s1', 'Hello Willow, try reconnecting.'),
     msg('a1', user(ALICE, 'account-name', { globalName: 'Willow' }), 'Here is my question.')];
-  assert.deepEqual(project(messages, { excludeId: 'a1' }).map(row => row.id), ['s1']);
+  assert.deepEqual(project(messages, { excludeId: 'a1' }).map(row => row.id), []);
+  assert.deepEqual(caseSourceMessages(messages, opts({ excludeId: 'a1' })), []);
+  const explicit = staffMsg('s2', '<@1001> Try reconnecting.');
+  assert.deepEqual(project([explicit, messages[1]], { excludeId: 'a1' }).map(row => row.id), ['s2']);
+});
+
+test('prior participation cannot make a mutable display name proof of ownership', () => {
+  const person = msg('person', alice, 'My earlier question.', { createdTimestamp: 100 });
+  const finding = staffMsg('finding', 'Alice, check the connection.', { createdTimestamp: 200 });
+  assert.deepEqual(project([finding, person]).map(row => row.id), ['person']);
+  assert.deepEqual(project([{ ...finding, reference: { messageId: person.id } }, person]).map(row => row.id), ['finding', 'person']);
+  assert.deepEqual(project([{ ...finding, createdTimestamp: undefined }, { ...person, createdTimestamp: undefined }]).map(row => row.id), ['person']);
+  const conflictingPerson = { ...person, id: '700000000000000002' };
+  const conflictingFinding = { ...finding, id: '700000000000000001' };
+  assert.deepEqual(project([conflictingPerson, conflictingFinding]).map(row => row.id), [conflictingPerson.id]);
 });
 
 test('own customer messages keep their owner when mentioning or replying to peers', () => {
@@ -66,11 +81,12 @@ test('customer-controlled role labels and staff usernames never confer staff tru
   assert.deepEqual(project(messages, { isStaff: () => { throw new Error('missing role lookup'); } }).map(row => row.id), ['a1']);
 });
 
-test('strict anchored names use unique username, global name or member display name', () => {
+test('strict names corroborate stable reply identity across username, global name and display name', () => {
   const current = msg('a1', user(ALICE, 'alice-id', { globalName: 'Willow Reed' }), 'Question.',
     { member: { displayName: 'Forest' } });
-  const messages = [current, staffMsg('s1', 'Willow Reed, keep the app installed.'),
-    staffMsg('s2', 'Hi Forest, check the indicator.'), staffMsg('s3', 'alice-id: check again.'),
+  const ref = { reference: { messageId: current.id } };
+  const messages = [current, staffMsg('s1', 'Willow Reed, keep the app installed.', ref),
+    staffMsg('s2', 'Hi Forest, check the indicator.', ref), staffMsg('s3', 'alice-id: check again.', ref),
     staffMsg('s4', 'I spoke with Willow Reed about another request.')];
   assert.deepEqual(project(messages).map(row => row.id), ['a1', 's1', 's2', 's3']);
 });
@@ -200,7 +216,7 @@ test('a third-person mention cannot establish staff ownership without an anchore
 test('staff source hints stay with the addressed customer across different official links', () => {
   const messages = [msg('a1', alice, 'I use Google sign-in.'), msg('b1', bob, 'I use Apple sign-in.'),
     reply('apple', staff, 'Use this Apple guide https://help.omi.me/en/articles/111-apple-guide', 'b1', { member: { verified: true } }),
-    staffMsg('google', 'Alice, use https://help.omi.me/en/articles/222-google-guide'),
+    staffMsg('google', 'Alice, use https://help.omi.me/en/articles/222-google-guide', { reference: { messageId: 'a1' } }),
     staffMsg('general', 'A general reference is https://docs.omi.me/setup'),
     staffMsg('third-person', 'The previous guide for <@1002> was https://help.omi.me/en/articles/333-other-guide')];
   const sources = caseSourceMessages(messages, opts());
