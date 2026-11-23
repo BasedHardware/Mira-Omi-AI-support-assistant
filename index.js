@@ -16,6 +16,7 @@ const {
   clipForDiscord,
   clipThreadHistory,
   escalateReply,
+  handoffState,
   inThreadReply,
   rewriteUserMentions,
   wantsAuthorPing,
@@ -1207,7 +1208,8 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
       if (dbReady && !supportCase.escalationId) {
         supportCase = await supportCases.linkHandoff(supportCase.id, { escalationId: await db.createEscalation(channel.id) });
       }
-      const deliveredCase = ['delivered', 'accepted'].includes(supportCase.status);
+      const caseDelivered = () => ['delivered', 'accepted'].includes(handoffState({ supportCase, customerId: message.author.id }));
+      const deliveredCase = caseDelivered();
       if(deliveredCase) answerTrace.delivery('staff','previously_delivered');
       console.log(`[Bot] Escalating channel=${channel.id} area=${triaged.area} signals=${escalationSignals.join(',')}`);
       const techLane = router.isTechLane({ lane: triaged.lane, area: triaged.area });
@@ -1235,9 +1237,12 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
           try {
             await assertCurrentOwnership();
             answerTrace.delivery('reply','attempted');
+            const reuseHandoffCopyContext = { ...publicPrivacy, privateIntakeNeeded,
+              supportCase, customerId: message.author.id, language: replyLanguage,
+              pinged: true, conversation: true, replyInThread: true, footers: localizedFooters };
             await existing.send({
-              content: rewriteUserMentions(fitPublicReply(publicReplyPrivacy(escalateReply(cleanAnswer, { ...publicPrivacy, privateIntakeNeeded,
-                pinged: true, conversation: true, footers: localizedFooters }), { ...publicPrivacy, privateIntakeNeeded, staffDelivered: true })), message),
+              content: rewriteUserMentions(fitPublicReply(publicReplyPrivacy(escalateReply(cleanAnswer, reuseHandoffCopyContext),
+                { ...publicPrivacy, privateIntakeNeeded, handoff: reuseHandoffCopyContext, staffDelivered: caseDelivered() })), message),
               allowedMentions: replyMentions(message, { pingAuthor: false, repliedUser: false }),
             });
             answerTrace.delivery('reply','confirmed');
@@ -1280,18 +1285,22 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
             labels: triaged.labels,
             dataLossRisk,
           });
-          answerTrace.delivery('staff',handoff.ok?'confirmed':'failed');
           pinged = Boolean(handoff.ok);
           deliveryFailed = !handoff.ok;
           cardHere = handoff.via === 'channel' && Boolean(channel.isThread?.());
           duplicate = Boolean(handoff.duplicate);
           handoffThread = handoff.thread || handoffThread;
           if (handoff.threadId) await supportCases.linkHandoff(supportCase.id, { handoffThreadId: handoff.threadId });
-          if (handoff.ok) await supportCases.markDelivered(supportCase.id, {
-            confirmed: true, destination: handoff.deliveredVia || handoff.via,
-          });
+          if (handoff.ok && !handoff.duplicate) {
+            supportCase = await supportCases.markDelivered(supportCase.id, {
+              confirmed: true, destination: handoff.deliveredVia || handoff.via,
+            }) || await supportCases.getCaseById(supportCase.id) || supportCase;
+          }
+          const confirmedCase = caseDelivered();
+          answerTrace.delivery('staff', !handoff.ok ? 'failed' : !confirmedCase ? 'uncertain'
+            : handoff.duplicate ? 'previously_delivered' : 'confirmed');
           observeSupport(observer => observer.signal(channel, { eventId: `${message.id}-handoff`,
-            kind: handoff.ok ? 'handoff_delivered' : 'delivery_failed', area: triaged.area }, message.author.id));
+            kind: !handoff.ok ? 'delivery_failed' : confirmedCase ? 'handoff_delivered' : 'needs_help', area: triaged.area }, message.author.id));
           if (handoff.thread && handoff.ok) {
             rememberOpenHandoff(channel.id, message.author?.id, handoff.thread);
             await applyThreadName(handoff.thread, nameMeta);
@@ -1303,10 +1312,11 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
           );
         } catch (err) {
           if (isLeaseLost(err)) throw err;
-          answerTrace.delivery('staff','failed');
           deliveryFailed = !pinged;
-          if (deliveryFailed) observeSupport(observer => observer.signal(channel, {
-            eventId: `${message.id}-handoff`, kind: 'delivery_failed', area: triaged.area,
+          const confirmedCase = caseDelivered();
+          answerTrace.delivery('staff', deliveryFailed ? 'failed' : confirmedCase ? 'previously_delivered' : 'uncertain');
+          observeSupport(observer => observer.signal(channel, {
+            eventId: `${message.id}-handoff`, kind: deliveryFailed ? 'delivery_failed' : confirmedCase ? 'handoff_delivered' : 'needs_help', area: triaged.area,
           }, message.author.id));
           console.error('[Bot] Handoff failed:', err.message);
         }
@@ -1331,8 +1341,9 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
         await postShopTicketCard(handoffThread, triaged);
       }
       const movedToThread = !inHandoff && Boolean(handoffThread?.id);
-      let parentReply = escalateReply(cleanAnswer, {
+      const handoffCopyContext = {
         ...publicPrivacy, privateIntakeNeeded,
+        supportCase, customerId: message.author.id,
         pinged: pinged || deliveredCase,
         duplicate,
         conversation: stayInPost && !handoffFollowup,
@@ -1347,14 +1358,16 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
         replyInThread: pinged && Boolean(channel.isThread?.() || handoffThread?.id),
         footers: localizedFooters,
         language: replyLanguage,
-      });
+      };
+      let parentReply = escalateReply(cleanAnswer, handoffCopyContext);
+      const handoffPrivacy = { ...publicPrivacy, privateIntakeNeeded, handoff: handoffCopyContext,
+        staffDelivered: ['delivered', 'accepted'].includes(handoffState(handoffCopyContext)),
+        allowedChannelIds: handoffThread?.id ? [handoffThread.id] : [] };
       if (movedToThread) {
         const threadLink = `<#${handoffThread.id}>`;
-        parentReply = `${clipForDiscord(parentReply, 1900 - threadLink.length - 2)}\n\n${threadLink}`;
+        parentReply = fitPublicReply(publicReplyPrivacy(`${parentReply}\n\n${threadLink}`, handoffPrivacy));
       }
-      await replySafe(message, parentReply, { pingAuthor, privacy: { ...publicPrivacy, privateIntakeNeeded,
-        staffDelivered: (pinged || deliveredCase) && !deliveryFailed,
-        allowedChannelIds: handoffThread?.id ? [handoffThread.id] : [] } });
+      await replySafe(message, parentReply, { pingAuthor, privacy: handoffPrivacy });
       didReply = true;
       answered = true;
     } else {

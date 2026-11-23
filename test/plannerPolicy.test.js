@@ -38,7 +38,7 @@ test('planner-confirmed human order requests keep the human path through private
   assert.match(body, /verified order check/i);
   assert.match(body, /don't post your address or payment details/i);
   const delivered = escalateReply(body, { pinged: true, replyInThread: true });
-  assert.match(delivered, /will reply in this thread/i);
+  assert.match(delivered, /sent to the support team for review/i);
   assert.doesNotMatch(delivered, /\/order\b|email a code|help@omi\.me/i);
 });
 
@@ -74,7 +74,7 @@ test('planner-routed personal actions get exactly the next step confirmed by del
     assert.ok(draft.trim());
     assert.doesNotMatch(draft, /^I can|has this now|will reply|email help@omi\.me|Use \/order/i);
     const delivered = escalateReply(draft, { pinged: true, replyInThread: true });
-    assert.equal((delivered.match(/will reply in this thread/gi) || []).length, 1);
+    assert.equal((delivered.match(/sent to the support team for review/gi) || []).length, 1);
     assert.doesNotMatch(delivered, /help@omi\.me|Use \/order|approved|has shipped/i);
     const failed = escalateReply(draft, { deliveryFailed: true });
     assert.equal((failed.match(/help@omi\.me/gi) || []).length, 1);
@@ -173,7 +173,7 @@ test('unsupported handoff languages keep a delivered or failed next step', () =>
     assert.equal(body, acknowledgment);
     const footers = policy.handoffFooters(plan, question);
     const delivered = escalateReply(body, { pinged: true, replyInThread: true, footers });
-    assert.match(delivered, /will reply in this thread/i, language);
+    assert.match(delivered, /sent to the support team for review/i, language);
     const failed = escalateReply(body, { deliveryFailed: true, footers });
     assert.match(failed, /help@omi\.me/i, language);
   }
@@ -183,15 +183,15 @@ test('unsupported handoff languages keep a delivered or failed next step', () =>
 
 const NEW_HANDOFF_LOCALES = [
   { language: 'zh', regionalLanguage: 'zh-CN', question: '我需要人工帮助。', body: '这个问题仍需查看。',
-    pending: /需要.*支持团队.*查看/, thread: /已将.*发送给支持团队.*等待团队回复/, sent: /已发送给支持团队/,
-    failed: /未能.*发送给支持团队.*help@omi\.me/, duplicate: /支持团队已经收到/, issue: /问题已记录/ },
+    pending: /需要.*支持团队.*查看/, thread: /请求已发送给支持团队审核/, sent: /已发送给支持团队/,
+    failed: /未能.*发送给支持团队.*help@omi\.me/, duplicate: /请求此前已发送给支持团队审核/, issue: /问题已记录/, accepted: /成员已接受.*审核/, unconfirmed: /尚未确认请求已发送/ },
   { language: 'it', regionalLanguage: 'it-IT', question: 'Ho bisogno di aiuto da una persona.', body: 'Il problema richiede una verifica.',
-    pending: /persona del team.*esaminare/, thread: /Ho inviato.*Attendi la risposta.*questa conversazione/, sent: /richiesta è stata inviata/,
-    failed: /Non ho potuto inviare.*help@omi\.me/, duplicate: /team ha già ricevuto/, issue: /problema è registrato/ },
+    pending: /persona del team.*esaminare/, thread: /richiesta è stata inviata.*verifica.*questa conversazione/, sent: /richiesta è stata inviata/,
+    failed: /Non ho potuto inviare.*help@omi\.me/, duplicate: /richiesta era già stata inviata/, issue: /problema è registrato/, accepted: /persona.*ha accettato.*verifica/, unconfirmed: /non è confermato/ },
 ];
 
 test('Chinese and Italian handoffs provide every delivery-state key and a localized pending fallback', () => {
-  const keys = ['pending', 'thread', 'sent', 'failed', 'duplicate', 'issue'];
+  const keys = ['pending', 'thread', 'sent', 'failed', 'duplicate', 'issue', 'accepted', 'unconfirmed'];
   for (const locale of NEW_HANDOFF_LOCALES) {
     const footers = policy.handoffFooters({ replyLanguage: locale.language }, locale.question);
     assert.ok(footers, locale.language);
@@ -240,6 +240,6 @@ test('person-only fallback matches the request and uses the customer script', ()
   assert.match(romanized, /Team ke kisi vyakti/i);
   assert.doesNotMatch(romanized, /\p{Script=Devanagari}/u);
   const footer = policy.handoffFooters({ replyLanguage: 'hi' }, 'Mujhe refund chahiye');
-  assert.match(footer.thread, /isi thread mein jawab/i);
+  assert.match(footer.thread, /isi thread mein baat/i);
   assert.doesNotMatch(footer.thread, /\p{Script=Devanagari}/u);
 });

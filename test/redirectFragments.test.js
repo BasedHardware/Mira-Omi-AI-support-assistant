@@ -42,7 +42,7 @@ test('following references with their own instruction, link or warning remain', 
 
 test('ordinary and delivered-handoff formatting use the same cleaned body', () => {
   assert.equal(inThreadReply('Write to help@omi.me; they will advise you.').empty, true);
-  assert.equal(escalateReply('Write to help@omi.me; they will advise you.', {pinged:true,replyInThread:true}), 'A person on the team has this now and will reply in this thread.');
+  assert.equal(escalateReply('Write to help@omi.me; they will advise you.', {pinged:true,replyInThread:true}), 'Your request has been sent to the support team for review. Please continue in this thread.');
 });
 
 test('unknown language falls back conservatively and unrelated formatting is unchanged', () => {

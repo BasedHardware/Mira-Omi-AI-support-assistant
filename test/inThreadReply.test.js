@@ -91,7 +91,7 @@ for (const [language, body, contact, next] of [
     assert.ok(result.includes(body));
     assert.ok(result.includes(source));
     assert.doesNotMatch(result, /help@omi\.me|team@basedhardware\.com/i);
-    assert.match(result, /will reply in this thread/);
+    assert.match(result, /sent to the support team for review/);
   });
 }
 
@@ -129,6 +129,6 @@ for (const label of ['Sources:', '出典:', '出典：', 'Srot:', 'स्रो�
     assert.equal(sourceOnly.text, `${label} https://help.omi.me/synthetic-guide`);
     const delivered = utils.escalateReply(`窓口は help@omi.me です。\n${source}`, { pinged: true, replyInThread: true });
     assert.ok(delivered.includes(source));
-    assert.match(delivered, /will reply in this thread/);
+    assert.match(delivered, /sent to the support team for review/);
   });
 }

@@ -2,6 +2,69 @@
 const WILL = "\\bi(?: will|['’]ll| am going to|['’]m going to) (?:also |just |now |go ahead and )?";
 const TEAM = '(?:the |our |a |an )?(?:omi )?(?:team|staff|support|engineers?|developers?|devs|person|human|someone)\\b';
 
+// No application event records a commitment to a future staff response or
+// private outreach. These bounded grammars reject such model-authored claims;
+// they do not turn a review requirement or a historical human reply into one.
+const STAFF_FUTURE = [
+  /\b(?:team|staff|support|engineers?|developers?|agents?|specialists?|representatives?|members?|person|human|someone)(?:['’]ll|\s+(?:will|shall|(?:is|are)\s+going\s+to))\s+(?:(?:also|now|then|soon|personally|directly|privately|definitely|certainly|still|not|never|be)\s+){0,4}(?:repl(?:y|ying)|respond(?:ing)?|follow(?:ing)?\s*up|get(?:ting)?\s+back|reach(?:ing)?\s+out|contact(?:ing)?|ask(?:ing)?|request(?:ing)?|review(?:ing)?|investigat(?:e|ing)|check(?:ing)?|handle|resolve|fix|arrange|update|provid(?:e|ing)|in\s+touch)\b/iu,
+  /\b(?:we|they)(?:['’]ll|\s+(?:will|shall|(?:are)\s+going\s+to))\s+(?:(?:also|now|then|soon|personally|directly|privately|definitely|certainly|still|not|never|be)\s+){0,4}(?:repl(?:y|ying)|respond(?:ing)?|follow(?:ing)?\s*up|get(?:ting)?\s+back|reach(?:ing)?\s+out|contact(?:ing)?|ask(?:ing)?|in\s+touch|provid(?:e|ing)\s+(?:(?:you\s+(?:with\s+)?)?(?:an?|the)\s+)?(?:reply|response|update|answer))\b/iu,
+  /\byou(?:['’]ll|\s+will)\s+(?:(?:also|soon|then|definitely|certainly)\s+){0,3}(?:hear\s+(?:back\s+)?from|receive\s+(?:a|an|the)\s+(?:reply|response|message|update)\s+from)\s+(?:(?:the|our|omi)\s+){0,3}(?:team|staff|support|engineers?|agents?|specialists?)\b/iu,
+  /\b(?:expect|look\s+out\s+for)\s+(?:a|an|the)\s+(?:reply|response|message|update)\s+from\s+(?:(?:the|our|omi)\s+){0,3}(?:team|staff|support|engineers?|agents?|specialists?)\b/iu,
+  /(?:equipo|soporte|agente|persona|alguien)[^.!?。！？।\n]{0,100}(?:responderá|contestará|revisará|contactará|pedirá|se pondrá en contacto)/iu,
+  /(?:equipe|suporte|agente|pessoa|alguém)[^.!?。！？।\n]{0,100}(?:responderá|entrará em contato|pedirá|analisará)/iu,
+  /(?:team|support|mitarbeiter|jemand)[^.!?。！？।\n]{0,80}(?:wird|werden)[^.!?。！？।\n]{0,60}(?:antworten|melden|fragen|prüfen|bearbeiten)/iu,
+  /(?:ekip|destek|biri)[^.!?。！？।\n]{0,100}(?:yanıt verecek|cevap verecek|isteyecek|inceleyecek)/iu,
+  /(?:équipe|support|agent|personne|quelqu['’]un)[^.!?。！？।\n]{0,100}(?:répondra|contactera|demandera|examinera|fera le suivi)/iu,
+  /(?:tim|dukungan|seseorang|anggota)[^.!?。！？।\n]{0,80}\bakan\s+(?:membalas|menghubungi|meminta|meninjau)/iu,
+  /(?:team|support|vyakti|sadasya|koi)[^.!?。！？।\n]{0,100}(?:jawab dega|poochega|sampark karega|jaanch karega)/iu,
+  /(?:टीम|सहायता|सदस्य|व्यक्ति|कोई)[^.!?。！？।\n]{0,100}(?:जवाब देगा|पूछेगा|संपर्क करेगा|समीक्षा करेगा)/u,
+  /(?:担当者|サポート|チーム)[^.!?。！？।\n]{0,100}(?:返信します|連絡します|確認します|お返事します)/u,
+  /(?:团队|團隊|支持|客服|工作人员|工作人員)[^.!?。！？।\n]{0,60}(?:会|會|将|將)[^.!?。！？।\n]{0,60}(?:回复|回覆|联系|聯繫|询问|詢問|查看|审核|審核)/u,
+  /(?:team|supporto|persona|agente)[^.!?。！？।\n]{0,100}(?:risponderà|contatterà|chiederà|esaminerà)/iu,
+];
+
+const STAFF_ACTOR = '\\b(?:support(?:\\s+(?:team(?:\\s+members?)?|agents?|specialists?|representatives?))?|staff(?:\\s+members?)?|team(?:\\s+members?)?|engineers?|developers?|(?:person|human|someone)\\s+(?:on|from)\\s+(?:(?:the|our|omi)\\s+){0,3}team)\\b';
+const CASE_OBJECT = '(?:(?:your|this|the)\\s+(?:requests?|cases?|reports?|issues?|problems?|tickets?|accounts?|recordings?|uploads?|orders?|refunds?)\\b|(?:this|it)\\b(?=\\s*(?:[.!?;,:]|$)|\\s+(?:now|already|currently|today|for\\s+you)\\b))';
+const STAFF_CURRENT = [
+  new RegExp(`${STAFF_ACTOR}\\s+(?:is|are)\\s+(?:(?:already|currently|now)\\s+){0,2}(?:reviewing|investigating|checking|handling|working\\s+on|looking\\s+(?:at|into)|taking\\s+care\\s+of)\\s+${CASE_OBJECT}`, 'iu'),
+  new RegExp(`${STAFF_ACTOR}\\s+(?:has|have)\\s+(?:(?:already|just|now)\\s+){0,2}(?:accepted|received|picked\\s+up|taken\\s+over|taken\\s+ownership\\s+of)\\s+${CASE_OBJECT}`, 'iu'),
+  new RegExp(`${STAFF_ACTOR}\\s+(?:has|have|owns?)\\s+${CASE_OBJECT}`, 'iu'),
+  new RegExp(`${CASE_OBJECT}\\s+(?:(?:has|have)\\s+been|is|are)\\s+(?:accepted|assigned|picked\\s+up)\\s+(?:by|to)\\s+(?:(?:the|our|omi)\\s+){0,3}${STAFF_ACTOR}`, 'iu'),
+  new RegExp(`${CASE_OBJECT}\\s+(?:is|are)\\s+(?:now\\s+)?with\\s+(?:(?:the|our|omi)\\s+){0,3}${STAFF_ACTOR}`, 'iu'),
+];
+const SECRET = '(?:(?:your|any|a|the)\\s+)?(?:passwords?|verification\\s+codes?|one[- ]time\\s+codes?|security\\s+codes?|payment\\s+details|full\\s+card\\s+numbers?)';
+const CLOSED_SECURITY = new RegExp(`^(?:(?:the|our|a|an|omi)\\s+){0,3}${STAFF_ACTOR}\\s+will\\s+(?:never|not)\\s+ask\\s+(?:you\\s+)?(?:for\\s+|to\\s+(?:post|send|share|provide)\\s+)${SECRET}(?:\\s*(?:,\\s*(?:(?:and|or)\\s+)?|\\s+(?:and|or)\\s+)${SECRET})*[.!?]?$`, 'iu');
+const rawFuture = text => STAFF_FUTURE.some(pattern => pattern.test(text));
+const rawCurrent = text => STAFF_CURRENT.some(pattern => pattern.test(text));
+
+function closedStaffContext(text) {
+  const shown = String(text || '').replace(/[*_~`]/g, '').replace(/\s+/gu, ' ').trim();
+  if (CLOSED_SECURITY.test(shown)) return true;
+  // The entire unit must be one uncertainty statement. A comma, coordinator,
+  // new sentence or appended claim cannot borrow the uncertainty qualifier.
+  const uncertain = /^(?:I|we)\s+(?:cannot|can['’]t|could not|do not|don['’]t)\s+(?:guarantee|promise|confirm|verify)\s+(?:(?:that|whether|if)\s+)?(.+?)[.!?]?$/iu.exec(shown);
+  if (uncertain) {
+    const proposition = uncertain[1];
+    if (!/[,;:.!?—–]|\b(?:and|but|however|yet|meanwhile|also|additionally)\b/iu.test(proposition) &&
+        /^(?:(?:the|our|a|an|omi)\s+){0,4}(?:support|staff|team|engineer|developer|agent|specialist|representative|person|human|someone|we|they|you)\b/iu.test(proposition) &&
+        (rawFuture(proposition) || rawCurrent(proposition))) return true;
+  }
+  // Attribute a closed historical quotation without promoting its contents to
+  // a present case event. Future promises do not get restored by this rule.
+  const historical = /^(?:Earlier|Yesterday|Previously),?\s+(?:(?:the|our|a|an|omi)\s+){0,3}(?:support(?:\s+team)?|staff(?:\s+member)?|team|support\s+agent)\s+(?:wrote|said|reported|replied|posted)\s*[:,]\s*["“'‘]([^"“”'‘’\n]+)["”'’][.!?]?$/iu.exec(shown);
+  return Boolean(historical && !rawFuture(historical[1]));
+}
+
+function looksLikeStaffFuturePromise(text) {
+  const shown = String(text || '').replace(/[*_~`]/g, '');
+  return !closedStaffContext(shown) && rawFuture(shown);
+}
+
+function looksLikeUnverifiedStaffState(text) {
+  const shown = String(text || '').replace(/[*_~`]/g, '');
+  return !closedStaffContext(shown) && (rawFuture(shown) || rawCurrent(shown));
+}
+
 const LIE_PATTERNS = [
   /i(['’]ve| have) (already )?(spoken|talked|reached out|messaged|emailed|pinged|informed|notified|escalated)/i,
   new RegExp(`${WILL}(?:let|tell|notify|inform|ping|alert|message|email|contact) ${TEAM}`, 'i'),
@@ -40,7 +103,8 @@ const DROP_SENTENCE = [
 
 function looksLikeStaffLie(text) {
   if (!text) return false;
-  return LIE_PATTERNS.some((re) => re.test(String(text).replace(/[*_~`]/g, '')));
+  if (closedStaffContext(text)) return false;
+  return looksLikeUnverifiedStaffState(text) || LIE_PATTERNS.some((re) => re.test(String(text).replace(/[*_~`]/g, '')));
 }
 
 function looksLikeInventedLookup(text) {
@@ -84,9 +148,33 @@ function stripStaffLies(text) {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
   if (!cleaned || looksLikeStaffLie(cleaned)) {
-    return 'I do not have a human on this yet. I have not messaged anyone. A person on the team needs to take this.';
+    return 'A person needs to review this request.';
   }
   return cleaned;
+}
+
+// Delivery is composed by the application after review. A closed, standalone
+// future dispatch announcement contains no diagnostic fact or permission to
+// act. Discard only that bounded boilerplate before judging the useful body.
+// Mixed clauses, completed actions, staff commitments and dependent follow-ups
+// remain ordinary destructive removals and must pass the existing second look.
+function detachPlannedDispatchNotices(text, { handoffPlanned = false } = {}) {
+  const original = String(text || '');
+  if (!handoffPlanned) return { answer: original, removed: [] };
+  const notice = /^I(?:['’]ll| will| am going to) (?:pass|forward|send|hand) (?:this|it|that|your (?:request|report|case|details))(?: (?:on|along|over))? to (?:(?:the|our|a|an) )?(?:support team|team|staff|support|engineers?|person|human)(?: for review)?[.!]$/u;
+  const units = original.split(/(?<=[.!?])\s+|\n+/u).map(value => value.trim()).filter(Boolean);
+  // Do not guess the antecedent of prose that may rely on the dispatch. Nor
+  // reinterpret a quoted, fenced or conditional conversation as an event slot.
+  const dependency = /^(?:they|them|their|that|this|it|which|so|therefore|because|once|after|then|only|until|when|unless|otherwise)\b/iu;
+  const matches = units.filter(unit => notice.test(unit));
+  if (!matches.length || /[`“”"<>]|^\s*>/mu.test(original) ||
+      units.some((unit, index) => notice.test(unit) && units[index + 1] && dependency.test(units[index + 1]))) {
+    return { answer: original, removed: [] };
+  }
+  const answer = original.split('\n').map(line => line.split(/(?<=[.!?])\s+/u)
+    .filter(unit => !notice.test(unit.trim())).join(' ')).join('\n')
+    .replace(/\n{3,}/g, '\n\n').trim();
+  return { answer, removed: matches };
 }
 
 const HOWTO_BLEED = [
@@ -469,8 +557,12 @@ function stripUnverifiedOutcomeClaims(answer, { question = '', financialContext 
 }
 
 module.exports = {
+  detachPlannedDispatchNotices,
   stripUnverifiedOutcomeClaims,
   looksLikeStaffLie,
+  looksLikeStaffFuturePromise,
+  looksLikeUnverifiedStaffState,
+  isClosedStaffContext: closedStaffContext,
   stripStaffLies,
   stripInventedLookup,
   looksLikeInventedLookup,

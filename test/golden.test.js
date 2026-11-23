@@ -33,7 +33,7 @@ test('golden person-path drafts get one next step only after staff delivery is k
     const { answer } = await replyFor(scene, route);
     assert.ok(answer.trim(), scene.id);
     const delivered = escalateReply(answer, { pinged: true, replyInThread: true });
-    assert.equal((delivered.match(/will reply in this thread/gi) || []).length, 1, scene.id);
+    assert.equal((delivered.match(/sent to the support team for review/gi) || []).length, 1, scene.id);
     assert.doesNotMatch(delivered, /help@omi\.me|Use \/order|approved|has shipped|will arrive/i, scene.id);
     const failed = escalateReply(answer, { deliveryFailed: true });
     assert.equal((failed.match(/help@omi\.me/gi) || []).length, 1, scene.id);

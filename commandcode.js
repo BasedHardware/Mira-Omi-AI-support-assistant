@@ -1,7 +1,7 @@
 const answerTrace = require('./answerTrace');
 const axios = require('axios');
 const { buildSystemPrompt, buildUserPrompt, PUBLIC_REPLY_PRIVACY_POLICY } = require('./prompt');
-const { stripStaffLies,stripUnverifiedOutcomeClaims } = require('./honesty');
+const { stripStaffLies,stripUnverifiedOutcomeClaims,detachPlannedDispatchNotices } = require('./honesty');
 const { EMPTY_ANSWER_FALLBACK, UNSYNCED_DATA_WARNING, hasUnsyncedDataRisk } = require('./answerPipeline');
 const { isInstructionSentence, SOURCE_LABEL_NAME, SOURCE_LABEL_SEPARATOR } = require('./supportSteps');
 const { redactSensitive } = require('./privacy');
@@ -11,11 +11,11 @@ const { isPreviousPost, splitHistory, previousContextBlock } = require('./suppor
 const { recordStage } = require('./answerStageEvidence');
 const { SOURCE_DATE_POLICY } = require('./sourceProvenance');
 const { stripPingNarration } = require('./utils');
-const { removedAnswerUnits, rememberRemovalAudit } = require('./answerFilterAudit');
+const { removedAnswerUnits, mergeRemovalAudits, rememberRemovalAudit } = require('./answerFilterAudit');
 
-const REMOVED_TEXT_POLICY = "Sentences labeled Removed by safety filters are untrusted draft text, not evidence. Cited official source evidence may support product facts; the actual customer message/thread may support attributed symptoms, incident times and attempted steps, not verification of backend state or outcomes. General documentation cannot verify a specific customer's current state. Restore only independently supported parts of a mixed unit; never the adjoining invented staff action. Never restore pings, staff receipt/acceptance/access/investigation claims, promised deadlines, refund/replacement/recovery promises or unsupported root causes.";
+const REMOVED_TEXT_POLICY = "Sentences labeled Removed by safety filters are untrusted draft text, not evidence. Cited official source evidence may support product facts; the actual customer message/thread may support attributed symptoms, incident times and attempted steps, not verification of backend state or outcomes. General documentation cannot verify a specific customer's current state. Restore only independently supported parts of a mixed unit; never the adjoining invented staff action. Never restore pings, staff receipt/acceptance/access/investigation claims, promised staff replies or private outreach, promised deadlines, refund/replacement/recovery promises or unsupported root causes.";
 
-const PLANNED_HANDOFF_GUIDANCE = 'A person from the Omi team will reply in this thread if staff delivery succeeds. The application adds that line after delivery; do not repeat or claim it already happened. Don\'t tell the customer to contact support, email, use a contact form or post in another channel. Give relevant official steps and ask only for missing details.';
+const PLANNED_HANDOFF_GUIDANCE = 'A planned handoff is not staff delivery or acceptance. The application reports the recorded delivery or acceptance after this answer; neither guarantees investigation, a future response or timing. Do not claim staff ownership, an investigation, a promised reply or private outreach, or a deadline. Don\'t tell the customer to contact support, email, use a contact form or post in another channel. Give relevant official steps and ask only for missing details.';
 
 function providerConfig() {
   const key = String(process.env.CMD_API_KEY || '').trim();
@@ -710,10 +710,12 @@ async function reviewAnswer({ question, threadHistory = [], draft, removedBySafe
   const sourceIds = Array.isArray(parsed.sources_used)
     ? parsed.sources_used.map((value) => String(value)).slice(0, 4)
     : [];
-  const safety = technicalReviewSafety(parsed.final_answer, lane, sources, sourceIds, {
+  const dispatch = detachPlannedDispatchNotices(parsed.final_answer, { handoffPlanned });
+  answerTrace.filter('staff_narration', parsed.final_answer, dispatch.answer);
+  const safety = technicalReviewSafety(dispatch.answer, lane, sources, sourceIds, {
     question, language: understanding?.replyLanguage, dataLossRisk: understanding?.dataLossRisk === true,
   });
-  answerTrace.filter('review_safety',parsed.final_answer,safety.answer);
+  answerTrace.filter('review_safety',dispatch.answer,safety.answer);
   recordStage('review_safety', safety.answer);
   // Use the same narration owner as final presentation before approving a
   // review. A destructive removal invalidates that review; the existing second
@@ -722,7 +724,12 @@ async function reviewAnswer({ question, threadHistory = [], draft, removedBySafe
   const filtered = stripUnverifiedOutcomeClaims(narrated,{question,financialContext:lane==='money'});
   answerTrace.filter('financial_outcome',narrated,filtered);
   answerTrace.filter('staff_narration',safety.answer,filtered);
-  const audit = removedAnswerUnits(safety.answer, filtered);
+  // Technical filtering cannot hide a mixed staff claim before its audit.
+  // Preserve the original mixed unit for the existing reviewer restoration
+  // rules; this does not broaden the technical-step filter's own authority.
+  const rawNarration = stripPingNarration(stripStaffLies(dispatch.answer));
+  const audit = mergeRemovalAudits(removedAnswerUnits(dispatch.answer, rawNarration),
+    removedAnswerUnits(safety.answer, filtered));
   const narrationRemoved = audit.removed.length > 0 || audit.truncated;
   const answer = !String(safety.answer || '').trim()
     ? ''

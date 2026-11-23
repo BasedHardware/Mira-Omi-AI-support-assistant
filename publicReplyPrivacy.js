@@ -1,4 +1,5 @@
 const {stripUnverifiedOutcomeClaims}=require('./honesty');
+const { splitHandoffFooter } = require('./handoffCopy');
 const { redactSensitive } = require('./privacy');
 const { SOURCE_LABEL_NAME, SOURCE_LABEL_SEPARATOR } = require('./supportSteps');
 
@@ -18,18 +19,18 @@ const SOURCE = new RegExp(`^\\s*${SOURCE_LABEL_NAME}\\s*${SOURCE_LABEL_SEPARATOR
 const publicSupportEmail = value => /^(?:help@omi\.me|team@basedhardware\.com)$/iu.test(value);
 const DIAGNOSTIC = /device|app\s*version|operating\s*system|\bOS\b|mod[eè]le|version|ger[aä]t|dispositivo|cihaz|perangkat|设备|機種|デバイス|डिवाइस/iu;
 const COPY = {
-  en: ['For order verification, use `/order` privately; keep other private details out of this thread.', 'A team member will ask privately for any needed account or order details. Never send passwords, payment details or verification codes.'],
-  de: ['Nutze `/order` zur privaten Bestellprüfung; teile hier keine privaten Angaben.', 'Ein Teammitglied fragt benötigte Konto- oder Bestellangaben privat ab. Teile niemals Passwörter, Zahlungsdaten oder Bestätigungscodes.'],
-  fr: ['Pour vérifier une commande en privé, utilise `/order` ; ne publie aucune donnée privée ici.', 'Un membre de l’équipe demandera en privé les informations de compte ou de commande nécessaires. Ne transmets jamais de mot de passe, de données de paiement ou de code de vérification.'],
-  es: ['Para verificar un pedido en privado, usa `/order`; no publiques datos privados aquí.', 'Una persona del equipo pedirá en privado los datos de cuenta o pedido necesarios. Nunca envíes contraseñas, datos de pago ni códigos de verificación.'],
-  pt: ['Use `/order` para verificar um pedido em privado; não publique dados privados aqui.', 'Uma pessoa da equipe pedirá em privado os dados de conta ou pedido necessários. Nunca envie senhas, dados de pagamento ou códigos de verificação.'],
-  it: ['Usa `/order` per verificare un ordine in privato; non pubblicare dati privati qui.', 'Una persona del team chiederà in privato i dati necessari di account o ordine. Non inviare mai password, dati di pagamento o codici di verifica.'],
-  tr: ['Sipariş doğrulaması için `/order` komutunu özel olarak kullan; özel bilgileri burada paylaşma.', 'Ekipten biri gerekli hesap veya sipariş bilgilerini özel olarak isteyecek. Parola, ödeme bilgileri veya doğrulama kodları gönderme.'],
-  id: ['Gunakan `/order` untuk verifikasi pesanan secara pribadi; jangan kirim data pribadi di utas ini.', 'Anggota tim akan meminta informasi akun atau pesanan yang diperlukan secara pribadi. Jangan kirim kata sandi, rincian pembayaran atau kode verifikasi.'],
-  zh: ['请使用 `/order` 进行非公开的订单验证，不要在讨论串中发布隐私信息。', '团队成员会通过非公开方式询问必要的账户或订单信息。请勿发送密码、付款信息或验证码。'],
-  ja: ['注文の非公開確認には `/order` を使い、このスレッドに個人情報を書かないでください。', '担当者が必要なアカウント・注文情報を非公開で確認します。パスワード、支払い情報、認証コードは送らないでください。'],
-  'hi-Deva': ['ऑर्डर के निजी सत्यापन के लिए `/order` का उपयोग करें; निजी जानकारी इस थ्रेड में न भेजें।', 'टीम का सदस्य ज़रूरी खाता या ऑर्डर जानकारी निजी रूप से पूछेगा। पासवर्ड, भुगतान जानकारी या सत्यापन कोड कभी न भेजें।'],
-  'hi-Latn': ['Order ke niji satyapan ke liye `/order` istemal karein; niji jaankari is thread mein na bhejein.', 'Team ka sadasya zaroori account ya order jaankari niji taur par poochega. Password, payment details ya verification code kabhi na bhejein.'],
+  en: ['For order verification, use `/order` privately; keep other private details out of this thread.', "If account or order details are needed, use an existing private conversation with support. Never post passwords, payment details or verification codes."],
+  de: ['Nutze `/order` zur privaten Bestellprüfung; teile hier keine privaten Angaben.', "Falls Konto- oder Bestellangaben nötig sind, nutze eine bestehende private Unterhaltung mit dem Support. Teile niemals Passwörter, Zahlungsdaten oder Bestätigungscodes."],
+  fr: ['Pour vérifier une commande en privé, utilise `/order` ; ne publie aucune donnée privée ici.', "Si des informations de compte ou de commande sont nécessaires, utilisez une conversation privée existante avec le support. Ne publiez jamais de mot de passe, de données de paiement ou de code de vérification."],
+  es: ['Para verificar un pedido en privado, usa `/order`; no publiques datos privados aquí.', "Si se necesitan datos de cuenta o pedido, usa una conversación privada existente con soporte. Nunca publiques contraseñas, datos de pago ni códigos de verificación."],
+  pt: ['Use `/order` para verificar um pedido em privado; não publique dados privados aqui.', "Se forem necessários dados da conta ou do pedido, use uma conversa privada já existente com o suporte. Nunca publique senhas, dados de pagamento ou códigos de verificação."],
+  it: ['Usa `/order` per verificare un ordine in privato; non pubblicare dati privati qui.', "Se servono dati dell’account o dell’ordine, usa una conversazione privata già aperta con il supporto. Non pubblicare mai password, dati di pagamento o codici di verifica."],
+  tr: ['Sipariş doğrulaması için `/order` komutunu özel olarak kullan; özel bilgileri burada paylaşma.', "Hesap veya sipariş bilgileri gerekiyorsa destekle mevcut bir özel görüşmeyi kullanın. Parola, ödeme bilgileri veya doğrulama kodlarını herkese açık paylaşmayın."],
+  id: ['Gunakan `/order` untuk verifikasi pesanan secara pribadi; jangan kirim data pribadi di utas ini.', "Jika informasi akun atau pesanan diperlukan, gunakan percakapan pribadi yang sudah ada dengan dukungan. Jangan unggah kata sandi, rincian pembayaran atau kode verifikasi."],
+  zh: ['请使用 `/order` 进行非公开的订单验证，不要在讨论串中发布隐私信息。', "如果需要账户或订单信息，请使用与支持团队已有的非公开对话。请勿公开密码、付款信息或验证码。"],
+  ja: ['注文の非公開確認には `/order` を使い、このスレッドに個人情報を書かないでください。', "アカウントや注文の情報が必要な場合は、サポートとの既存の非公開のやり取りをご利用ください。パスワード、支払い情報、認証コードを公開しないでください。"],
+  'hi-Deva': ['ऑर्डर के निजी सत्यापन के लिए `/order` का उपयोग करें; निजी जानकारी इस थ्रेड में न भेजें।', "यदि खाता या ऑर्डर जानकारी की ज़रूरत हो, तो सहायता टीम के साथ पहले से मौजूद निजी बातचीत का उपयोग करें। पासवर्ड, भुगतान जानकारी या सत्यापन कोड सार्वजनिक रूप से कभी न भेजें।"],
+  'hi-Latn': ['Order ke niji satyapan ke liye `/order` istemal karein; niji jaankari is thread mein na bhejein.', "Agar account ya order jaankari ki zaroorat ho, to support ke saath pehle se maujood niji baatcheet ka istemal karein. Password, payment details ya verification code kabhi sarvajanik na bhejein."],
 };
 const ownedLines = Object.values(COPY).flat();
 function locale(language, question) {
@@ -120,7 +121,8 @@ function publicReplyPrivacy(answer, opts = {}) {
   const question = String(opts.question || '');
   const code = locale(opts.language, question);
   let needed = opts.privateIntakeNeeded === true;
-  let text = stripUnverifiedOutcomeClaims(answer,{question,financialContext:opts.financialContext===true}).replace(/[\uE000-\uE005]/g, '').trim();
+  const owned = splitHandoffFooter(answer, opts.handoff);
+  let text = stripUnverifiedOutcomeClaims(owned.text,{question,financialContext:opts.financialContext===true}).replace(/[\uE000-\uE005]/g, '').trim();
   for (const line of ownedLines) if (text.includes(line)) {
     text = text.split(line).join(''); needed = true;
   }
@@ -192,7 +194,9 @@ function publicReplyPrivacy(answer, opts = {}) {
   const privateNextStep = needed && opts.appendNextStep !== false
     ? opts.orderAvailable === true ? COPY[code][0] : opts.staffDelivered === true ? COPY[code][1] : '' : '';
   if (privateNextStep) text = [text, privateNextStep].filter(Boolean).join('\n\n');
-  return { text: text.trim(), privateNextStep, channelLinks: channels, privateIntakeNeeded: needed, empty };
+  if (owned.footer) text = [text, owned.footer].filter(Boolean).join('\n\n');
+  return { text: text.trim(), privateNextStep, handoffFooter: owned.footer,
+    channelLinks: channels, privateIntakeNeeded: needed, empty };
 }
 
 module.exports = { publicReplyPrivacy };

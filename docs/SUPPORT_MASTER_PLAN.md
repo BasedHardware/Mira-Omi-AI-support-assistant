@@ -1,5 +1,21 @@
 # Mira: master product plan
 
+## Current checkpoint — November 23, 2026 (IST)
+
+Fresh GitHub baseline is **130319dfc5b1e62a53970507dbd2c3b0459d18ba**, including #91/#90/#93/#95/#92. Production has not been freshly checked. The October deployment paragraphs below are historical and must not be read as current health evidence. Existing #94/#96 drafts retain their unfinished requirements.
+
+The real-thread batch #97–#108 remains **0/12 completed on main: 0/100 done, 100/100 outstanding**, an equal-item completion count, not model accuracy. The older product milestone scores are dated assessments, not current accuracy measurements. [The twelve-issue audit](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/blob/codex/case-bound-thread-context/docs/REAL_THREAD_RELIABILITY_AUDIT_2026-11-23.md) preserves each separate defect; none is dropped or closed for appearance.
+
+**#98 / [#110](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/pull/110):** repaired runtime b77305f passes hosted Node20/24/PostgreSQL CI,1,320 local tests/eight no-model checks, final maintainer self-review and the separately approved replacement comparison: **11/12 candidate versus main2/12**,40 requests, zero candidate-only material final failures or protected-handoff regressions. Every raw stage/final was read. The earlier41-request comparison remains failed and preserved; it exposed q04’s useful-answer loss, now repaired generally. Both replacement arms still lose q08’s romanized Hindi custody warning. These are selected known regression cases, not a current-product accuracy score. [Findings](HANDOFF_COMPARISON_2026-11-23.md) · [boundary](HANDOFF_STATE_COPY.md).
+
+**#100 / draft [#109](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/pull/109):** stable-ID context projection at e731a21 has1,325 tests/eight no-model checks and hosted CI. Updated local integration9ada783 contains the repaired H, auto-merges cleanly and passes1,355 tests/eight no-model checks; the runtime repair patch is identical to H’s. **The newly approved conditional comparison passes** after repaired A:11/12 candidate versus repaired-H10/12,44 requests, zero candidate-only material final failures or required-handoff regression. It remains a selected synthetic, pre-delivery-body comparison; public integration/current-head checks precede readiness. Both arms unnecessarily warn about unsynced recordings after a negated missing-recordings statement (#105); staff-reason metadata still needs separate grounding/fidelity work (#83/#106). H’s wrong Mac draft in q06 was corrected before final and is not counted as a final-answer failure. The unused original B grant was expressly replaced; stale H/I sources cannot silently represent the repaired integration.
+
+Four PRs remain open (#94/#96/#109/#110), with #110 using the production-fix exception. Main and the **0/12 real-thread completion count** remain unchanged. The separate warning-preparation branch has1,323 tests/eight no-model checks and known-response replay, is excluded from these trials, and has no new PR or readiness/release claim. The replacement pair used84 requests (maximum192); the original failed A used41, for125 total. No automatic rerun, merge, deployment, issue closure, optional enablement or customer message followed.
+
+Continue with #107/#103 routing, #102 freshness, then the remaining media, warning, response-eligibility, release-applicability and request-subject defects. Preserve #51/#53–#58/#62/#65/#83/#85 and the device/evidence-gate drafts. Do not substitute these two repairs for the whole product checklist.
+
+## Historical October30 checkpoint
+
 Updated October30,2026 (IST). GitHub main is **9b7154df6226dec6bfea5a32e2225e9f7d627019**. #90 provenance, #93 trace and #95 financial-outcome guard are merged; none is deployed. Live remains the verified **a9c9508 / a6ef6b22** rollback after the failed #91 device-applicability smoke. Aryan owns priorities. Product name is Mira, Omi's AI support assistant; technical identifiers stay unchanged.
 
 ## October30 — production fixes and acceptance gates

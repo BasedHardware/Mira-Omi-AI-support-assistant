@@ -142,7 +142,7 @@ function fitPublicReplyImpl(privacy, max = DISCORD_REPLY_MAX) {
   recordStage('clip_input', text);
   if (text.length <= max) return recordStage('clip_output', text);
   const tail = [text.includes(UNSYNCED_DATA_WARNING) ? UNSYNCED_DATA_WARNING : '',
-    privacy.privateNextStep, ...new Set(privacy.channelLinks || [])].filter(Boolean);
+    privacy.privateNextStep, privacy.handoffFooter, ...new Set(privacy.channelLinks || [])].filter(Boolean);
   if (!tail.length) return recordStage('clip_output', clipKeepingSource(text, max));
   let body = text;
   for (const item of tail) body = body.split(item).join('');

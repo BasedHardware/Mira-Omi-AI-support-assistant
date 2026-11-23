@@ -1,8 +1,9 @@
 const answerTrace = require('./answerTrace');
-const { stripStaffLies, stripInventedLookup } = require('./honesty');
+const { stripStaffLies, stripInventedLookup, looksLikeUnverifiedStaffState, isClosedStaffContext } = require('./honesty');
 const { createHash } = require('node:crypto');
 const { recordStage } = require('./answerStageEvidence');
 const { isPreviousPost } = require('./supportContextFormat');
+const { handoffState, handoffFooter, ESCALATE_FOOTER, PINGED_FOOTER, DUPLICATE_FOOTER } = require('./handoffCopy');
 const { classifyReviewRequirement } = require('./reviewRequirement');
 const { SOURCE_LABEL_NAME, SOURCE_LABEL_SEPARATOR, hasTroubleshootingStep, hasSafetyWarning } = require('./supportSteps');
 const SOURCE_HEADING = new RegExp(`^\\s*${SOURCE_LABEL_NAME}\\s*${SOURCE_LABEL_SEPARATOR}`, 'iu');
@@ -459,17 +460,6 @@ function clipForDiscord(text, max = DISCORD_REPLY_MAX) {
   return `${s.slice(0, Math.max(0, max - 1))}…`;
 }
 
-const ESCALATE_FOOTER =
-  'A person on the team needs to take this. I have not pinged anyone yet.';
-const FAILED_HANDOFF_FOOTER =
-  'I could not deliver this to the support team from here. Please email help@omi.me with the details; do not post order or account information publicly.';
-
-const PINGED_FOOTER = 'A person on the team has this now.';
-const THREAD_REPLY_FOOTER = 'A person on the team has this now and will reply in this thread.';
-
-const DUPLICATE_FOOTER =
-  'A person on the team already has this. I have not sent another ping.';
-
 const PING_NARRATION = [
   /have not (pinged|messaged|contacted|notified)/i,
   /noch niemanden/i,
@@ -502,6 +492,8 @@ function isPingNarration(text) {
   // Classify displayed words without allowing Markdown to hide a predicate;
   // the original text, conditions and punctuation are retained when allowed.
   const shown = String(text || '').replace(/[*_~`]/g, '').trim();
+  if (isClosedStaffContext(shown)) return false;
+  if (looksLikeUnverifiedStaffState(shown)) return true;
   if (PING_NARRATION.some(re => re.test(shown))) return true;
   return /person on the team/i.test(shown) && !classifyReviewRequirement(shown).recognized;
 }
@@ -619,12 +611,14 @@ function escalateReply(answer, opts = {}) {
   const shown = composeEscalation(answer, opts);
   return recordStage('handoff_output', require('./publicReplyPrivacy').publicReplyPrivacy(shown, {
     ...opts, orderAvailable: opts.orderAvailable ?? require('./orderFlow').isLive(),
-    staffDelivered: opts.pinged === true && !opts.deliveryFailed,
+    staffDelivered: ['delivered', 'accepted'].includes(handoffState(opts)),
+    handoff: opts,
   }).text);
 }
 
 function composeEscalation(answer, opts = {}) {
-  const pinged = Boolean(opts.pinged);
+  const state = handoffState(opts);
+  const pinged = state === 'delivered' || state === 'accepted';
   const duplicate = Boolean(opts.duplicate);
   const footers = opts.footers;
   let body = dropPingNarration(String(answer || '').trim());
@@ -632,26 +626,32 @@ function composeEscalation(answer, opts = {}) {
   if (pinged || opts.deliveryFailed) body = stripSupportRedirect(body, {language:opts.language || 'en'});
 
   if (opts.deliveryFailed) {
-    return [body, footers?.failed || FAILED_HANDOFF_FOOTER].filter(Boolean).join('\n\n');
+    return [body, handoffFooter(opts)].filter(Boolean).join('\n\n');
+  }
+
+  if (state === 'unconfirmed') {
+    return [body, handoffFooter(opts)].filter(Boolean).join('\n\n');
+  }
+
+  if (state === 'accepted' && (opts.supportCase || !opts.conversation || opts.replyInThread)) {
+    return [body, handoffFooter(opts)].filter(Boolean).join('\n\n');
   }
 
   if (pinged && opts.replyInThread) {
-    return [body, footers?.thread || THREAD_REPLY_FOOTER].filter(Boolean).join('\n\n');
+    return [body, handoffFooter(opts)].filter(Boolean).join('\n\n');
   }
 
-  if (opts.conversation) {
+  if (opts.conversation && !opts.supportCase) {
     return body;
   }
 
-  if (opts.issue && !opts.pingAuthor) {
+  if (opts.issue && !opts.pingAuthor && !opts.supportCase) {
     if (/written (up|in this thread)/i.test(body)) return body;
     return [body, footers?.issue || ISSUE_FOOTER].filter(Boolean).join('\n\n');
   }
 
   if (pinged) {
-    const footer = duplicate
-      ? (footers?.duplicate || DUPLICATE_FOOTER)
-      : (footers?.sent || PINGED_FOOTER);
+    const footer = handoffFooter(opts);
     if (!duplicate && ALREADY_SAID_PINGED.some((re) => re.test(body))) return body;
     if (duplicate && /already has this/i.test(body)) return body;
     return [body, footer].filter(Boolean).join('\n\n');
@@ -689,6 +689,7 @@ module.exports = {
   isUnknownMessageRef,
   clipThreadHistory,
   escalateReply,
+  handoffState,
   ESCALATE_FOOTER,
   PINGED_FOOTER,
   DUPLICATE_FOOTER,

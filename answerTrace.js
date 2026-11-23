@@ -81,7 +81,7 @@ function delivery(kind, result) {
   if(kind==='reply' && ['attempted','confirmed','failed','uncertain'].includes(result)) {
     s.reply=result;stage('delivery',result==='attempted'?'started':result==='confirmed'?'ok':result);
   }
-  if(kind==='staff' && ['confirmed','previously_delivered','failed'].includes(result) && s.staff!=='confirmed') s.staff=result;
+  if(kind==='staff' && ['confirmed','previously_delivered','failed','uncertain'].includes(result) && s.staff!=='confirmed') s.staff=result;
 }
 async function run(operation, { log=line=>console.log(line) }={}) {
   if(context.getStore()) return operation();

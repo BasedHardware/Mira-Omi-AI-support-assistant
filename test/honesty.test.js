@@ -94,7 +94,7 @@ test('crash replies lose pairing and Bluetooth steps', () => {
 test('pure lie is replaced with an honest fallback', () => {
   const out = stripStaffLies('I have conveyed your issue to the upper team.');
   assert.equal(looksLikeStaffLie(out), false);
-  assert.match(out, /have not messaged anyone/i);
+  assert.match(out, /person needs to review/i);
 });
 
 test('strips invented checkout-email lookup from order replies', () => {
@@ -294,7 +294,7 @@ test('escalate footer only claims a ping after a real handoff', () => {
   const pinged = escalateReply('I have not pinged a human yet.\nThis needs a person.', {
     pinged: true,
   });
-  assert.match(pinged, /person on the team has this now/i);
+  assert.match(pinged, /request has been sent to the support team for review/i);
   assert.equal(pinged.includes('I have not pinged'), false);
   assert.equal(pinged.includes(PINGED_FOOTER), true);
 
@@ -325,7 +325,7 @@ test('a delivered handoff keeps case details but removes routes to other support
   assert.doesNotMatch(delivered, /contact form|discord\.omi\.me|#help|contact support/i);
   assert.match(delivered, /Please include the device and app version/i);
   assert.match(delivered, /Source: https:\/\/help\.omi\.me/i);
-  assert.match(delivered, /person on the team has this now/i);
+  assert.match(delivered, /request has been sent to the support team for review/i);
   const failed = escalateReply(answer, { deliveryFailed: true });
   assert.doesNotMatch(failed, /contact form|discord\.omi\.me|#help|contact support/i);
   assert.match(failed, /Please include the device and app version/i);
@@ -337,7 +337,7 @@ test('an incomplete locale map cannot suppress a delivered or failed handoff nex
   const footers = { thread: '', failed: '', pending: '' };
   assert.match(escalateReply('A person needs to review this.', {
     pinged: true, replyInThread: true, footers,
-  }), /will reply in this thread/i);
+  }), /sent to the support team for review/i);
   assert.match(escalateReply('A person needs to review this.', {
     deliveryFailed: true, footers,
   }), /help@omi\.me/i);
@@ -370,7 +370,7 @@ test('does not contradict a real handoff with I cannot ping anyone', () => {
   );
   assert.match(live, /can't see orders/i);
   assert.match(live, /order number handy/i);
-  assert.match(live, /person on the team has this now/i);
+  assert.match(live, /request has been sent to the support team for review/i);
   assert.equal(/not able to ping/i.test(live), false);
   assert.equal(/won't tell you i did/i.test(live), false);
   assert.equal(/flagging this/i.test(live), false);
@@ -452,7 +452,7 @@ test('delivered handoffs remove alternate contact routes, including Help Center 
   const delivered = escalateReply(answer, { pinged: true, replyInThread: true });
   assert.doesNotMatch(delivered, /help\.omi\.me|help@omi\.me|discord\.omi\.me|#help|contact support/i);
   assert.match(delivered, /Please include the app version and the exact error/);
-  assert.match(delivered, /will reply in this thread/i);
+  assert.match(delivered, /sent to the support team for review/i);
 });
 
 test('handoff redirect cleanup preserves sourced delivery steps and carrier contact', () => {

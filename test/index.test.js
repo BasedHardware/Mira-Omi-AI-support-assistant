@@ -717,7 +717,7 @@ test('public privacy handler turns removed-only intake into a real handoff, not 
   const result = await ask('How do I use the app search?');
   assert.doesNotMatch(result.reply, /post your full address/i);
   assert.equal(staff.length, 1);
-  assert.match(result.reply, /team member will ask privately/);
+  assert.match(result.reply, /existing private conversation with support/);
 });
 
 test('public privacy handler retains the private-intake signal through confirmed delivery', async t => {
@@ -726,7 +726,7 @@ test('public privacy handler retains the private-intake signal through confirmed
   const result = await ask('My desktop app freezes whenever its settings window opens.');
   assert.doesNotMatch(result.reply, /post your account email/i);
   assert.match(result.reply, /Which OS version/);
-  assert.match(result.reply, /team member will ask privately/);
+  assert.match(result.reply, /existing private conversation with support/);
   assert.equal(staff.length, 1);
 });
 
@@ -737,7 +737,7 @@ test('public privacy handler reserves final space for private guidance and a com
   const result = await ask('My desktop app freezes whenever its settings window opens.');
   assert.ok(result.reply.length <= 1900);
   assert.ok(result.reply.includes(source));
-  assert.equal((result.reply.match(/team member will ask privately/g) || []).length, 1);
+  assert.equal((result.reply.match(/existing private conversation with support/g) || []).length, 1);
   assert.doesNotMatch(result.reply, /post your account email/i);
 });
 
@@ -747,14 +747,14 @@ test('public privacy handler advertises one private order command only when its 
   modelReply = { final_answer: 'Which OS version is installed? Please post your purchase email.', escalate: true };
   const result = await ask('My desktop app freezes whenever its settings window opens.');
   assert.equal((result.reply.match(/\/order\b/g) || []).length, 1);
-  assert.doesNotMatch(result.reply, /post your purchase email|team member will ask privately/i);
+  assert.doesNotMatch(result.reply, /post your purchase email|team member will ask privately|existing private conversation with support/i);
 });
 
 test('public privacy handler does not promise private staff follow-up after failed delivery', async () => {
   modelReply = { final_answer: 'Which OS version is installed? Please post your account email.', escalate: true };
   const result = await ask('My desktop app freezes whenever its settings window opens.');
   assert.match(result.reply, /could not deliver|could not reach|couldn.t reach/i);
-  assert.doesNotMatch(result.reply, /post your account email|team member will ask privately|\/order\b/i);
+  assert.doesNotMatch(result.reply, /post your account email|team member will ask privately|existing private conversation with support|\/order\b/i);
 });
 
 test('public privacy handler redacts a compound secret from both reply and generated thread name', async () => {
@@ -775,7 +775,7 @@ test('public privacy handler preserves the full custody warning beside private g
   assert.ok(result.reply.length <= 1900);
   assert.ok(result.reply.includes(UNSYNCED_DATA_WARNING));
   assert.ok(result.reply.includes(source));
-  assert.equal((result.reply.match(/team member will ask privately/g) || []).length, 1);
+  assert.equal((result.reply.match(/existing private conversation with support/g) || []).length, 1);
   assert.doesNotMatch(result.reply, /post your account email/i);
 });
 
@@ -1151,7 +1151,7 @@ test('an unresolved official-source point reaches one real staff dispatch despit
   assert.equal(staff.length, 1);
   assert.match(result.reply, /guides disagree/);
   assert.ok(result.reply.includes(source));
-  assert.equal((result.reply.match(/A person on the team has this now/g) || []).length, 1);
+  assert.equal((result.reply.match(/Your request has been sent to the support team for review/g) || []).length, 1);
   assert.doesNotMatch(result.reply, /help@|reply here in this thread|already investigating|accepted/i);
 });
 
@@ -1546,7 +1546,7 @@ test('a delivered Spanish handoff adds no English footer or extra email instruct
   const channel = makeChannel({ thread: true, parentId: TEST_CHANNEL, name: 'Consulta de reembolso' });
   const result = await ask('Quiero un reembolso, el dispositivo no funciona.', { channel });
   assert.equal(staff.length, 1);
-  assert.match(result.reply, /responderá en este hilo/i);
+  assert.match(result.reply, /solicitud.*enviado.*revisión/i);
   assert.doesNotMatch(result.reply, /A person on the team|Source:|Email help@omi\.me/i);
 });
 
@@ -1669,7 +1669,7 @@ test('delivered refund, order, and account tickets give one next step in the cus
   ]) {
     const channel = makeChannel({ thread: true, parentId: TEST_CHANNEL, name: 'Customer support case' });
     const result = await ask(question, { channel });
-    assert.match(result.reply, /person.*will reply in this thread/i, question);
+    assert.match(result.reply, /request.*sent.*review/i, question);
     assert.doesNotMatch(result.reply, /help@omi\.me/i, question);
     assert.doesNotMatch(result.reply, /use \/order|include (?:the )?order (?:number|#)/i, question);
     assert.equal(result.message.replies.length, 1, question);
@@ -1897,7 +1897,7 @@ test('ordinary support answers keep the next step here and a failed follow-up re
   modelReply = { final_answer: 'The recording still does not start after those steps.', escalate: false };
   await handleMessage(follow);
   assert.equal(staff.length, 1);
-  assert.match(replyText(follow), /person.*(?:team|thread)/i);
+  assert.match(replyText(follow), /request.*(?:team|thread)/i);
   assert.doesNotMatch(replyText(follow), /help@omi\.me/);
 });
 
@@ -1906,7 +1906,7 @@ test('redirect-only ordinary drafts fall back to a real handoff, not an empty se
   modelReply = { final_answer: 'Please email help@omi.me.' };
   const response = await ask('How do I organize my saved conversations?');
   assert.equal(staff.length, 1);
-  assert.match(response.reply, /person.*(?:team|thread)/i);
+  assert.match(response.reply, /request.*(?:team|thread)/i);
 });
 
 for (const [language, guidance, contact, next] of [
@@ -1972,7 +1972,7 @@ test('a delivered Handoff keeps details without directing the customer to anothe
   assert.equal(staff.length, 1);
   assert.match(result.reply, /Please include the app version/i);
   assert.doesNotMatch(result.reply, /contact form|discord\.omi\.me|#help|help@omi\.me/i);
-  assert.match(result.reply, /person.*(?:team|thread)/i);
+  assert.match(result.reply, /request.*(?:team|thread)/i);
 });
 
 test('a transcribed device-button question searches official app source before the model answers', async () => {
@@ -2469,7 +2469,7 @@ test('review failure with a cited FAQ still delivers one staff handoff and a thr
   const result = await ask('why does omi save two copies of my conversation?', { channel });
   assert.equal(staff.length, 1);
   assert.match(result.reply, /couldn't verify a safe answer/i);
-  assert.match(result.reply.trim(), /will reply in this thread\.$/i);
+  assert.match(result.reply.trim(), /Please continue in this thread\.$/i);
 });
 
 test('an escalated how-to whose Handoff cannot be posted says nobody was pinged', async () => {
@@ -3441,7 +3441,7 @@ test('a current contact instruction survives FAQ redirect cleanup as one verifie
   assert.equal(staff.length, 1);
   assert.match(result.reply, /supported firmware range is not listed/);
   assert.ok(result.reply.includes(source));
-  assert.equal((result.reply.match(/will reply in this thread/g) || []).length, 1);
+  assert.equal((result.reply.match(/sent to the support team for review/g) || []).length, 1);
   assert.doesNotMatch(result.reply, /contact support|help@omi\.me|reply here in this thread|already investigating|accepted/i);
   await handleMessage(result.message);
   assert.equal(staff.length, 1, 'replayed input does not dispatch a second staff card');
@@ -3470,7 +3470,7 @@ test('a closed quoted fact does not erase a later independent contact action in 
     const result = await ask('Where is documentation for validation indicators?', { channel });
     assert.equal(staff.length, before + 1);
     assert.match(result.reply, retainedFact);
-    assert.match(result.reply, /will reply in this thread/);
+    assert.match(result.reply, /sent to the support team for review/);
     assert.doesNotMatch(result.reply, /contact support|reply here in this thread/i);
   }
 });
@@ -3565,4 +3565,238 @@ test('known money route blocks a noun-free approving real review and still deliv
  reviewerResponse=args=>realReviewAnswer({...args,post:async()=>({data:{choices:[{message:{content:JSON.stringify({final_answer:'Die gewünschte Transaktion wurde inzwischen genehmigt.',grounded:true,relevant:true,confidence:1,escalate:false})}}]}})});
  const result=await ask('Bitte prüfen Sie die doppelte Abbuchung.');
  assert.equal(staff.length,1);assert.doesNotMatch(result.reply,/wurde genehmigt/iu);
+});
+
+test('handoff state: a fresh staff delivery reports review delivery without ownership or reply promises', async t => {
+  enableStaffDelivery(t);
+  modelReply = { final_answer: 'The connection still needs a review.', escalate: true, confidence: 0.2 };
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder connection' });
+  const result = await ask('My recorder still disconnects after reconnecting. Please have a person review this.', { channel });
+  const value = await supportCases.getCaseByThread(channel.id, result.message.author.id);
+  assert.equal(value.status, 'delivered');
+  assert.match(result.reply, /sent.*support team.*review/i);
+  assert.doesNotMatch(result.reply, /has this now|accepted|will reply|already investigating/i);
+});
+
+test('handoff state: each participant gets only their own recorded acceptance state on repeated status requests', async t => {
+  enableStaffDelivery(t);
+  modelReply = { final_answer: 'The connection still needs a review.', escalate: true, confidence: 0.2 };
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder follow-up' });
+  const acceptedCustomer = nextId(), waitingCustomer = nextId();
+  const first = await supportCases.getOrCreateCase({ channelId: channel.id, customerId: acceptedCustomer, customerThreadId: channel.id });
+  await supportCases.markDelivered(first.id, { confirmed: true });
+  await supportCases.markAccepted(first.id, { staffId: nextId() });
+  const waiting = await supportCases.getOrCreateCase({ channelId: channel.id, customerId: waitingCustomer, customerThreadId: channel.id });
+  await supportCases.markDelivered(waiting.id, { confirmed: true });
+  for (const text of ['Can a person review my recorder issue?', 'Is anyone investigating my recorder issue yet?']) {
+    const result = await ask(text, { channel, authorId: waitingCustomer });
+    assert.match(result.reply, /sent.*review/i);
+    assert.doesNotMatch(result.reply, /accepted|has this now|will reply|already investigating/i);
+    assert.equal((await supportCases.getCaseByThread(channel.id, waitingCustomer)).id, waiting.id);
+  }
+  const result = await ask('Can a person review my recorder issue?', { channel, authorId: acceptedCustomer });
+  assert.match(result.reply, /accepted.*review/i);
+  assert.doesNotMatch(result.reply, /will reply|already investigating/i);
+});
+
+test('handoff state: an unconfirmed durable delivery write cannot produce a receipt or ownership claim', async t => {
+  enableStaffDelivery(t);
+  modelReply = { final_answer: 'The connection still needs a review.', escalate: true, confidence: 0.2 };
+  t.mock.method(supportCases, 'markDelivered', async () => { throw new Error('synthetic receipt write unavailable'); });
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder review' });
+  const result = await ask('My recorder will not connect. Please have a person review this.', { channel });
+  assert.match(result.reply, /delivery.*not confirmed/i);
+  assert.doesNotMatch(result.reply, /has been sent|has this now|accepted|will reply/i);
+});
+
+test('handoff state: a recent notification for a previous case does not deliver a new queued case', async t => {
+  const staff = enableStaffDelivery(t);
+  const signals = [], logs = [];
+  t.mock.method(console, 'log', (...parts) => logs.push(parts.join(' ')));
+  t.mock.method(require('../supportLearning'), 'getObserver', () => ({ enabled: true,
+    capture: async () => {}, signal: async (_channel, input) => { if (input.eventId.endsWith('-handoff')) signals.push(input.kind); } }));
+  modelReply = { final_answer: 'The connection still needs a review.', escalate: true, confidence: 0.2 };
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'New recorder report' });
+  const authorId = nextId();
+  const first = await ask('My recorder connection needs human review.', { channel, authorId });
+  const closed = await supportCases.getCaseByThread(channel.id, authorId);
+  assert.equal(closed.status, 'delivered');
+  await supportCases.resolveCase(closed.id, { close: true, confirmed: true });
+  const second = await ask('A different connection problem needs human review.', { channel, authorId });
+  const queued = await supportCases.getActiveCase(channel.id, authorId);
+  assert.notEqual(queued.id, closed.id);
+  assert.equal(staff.length, 1, 'the existing notification cache produced no fresh receipt');
+  assert.equal(queued.status, 'queued');
+  assert.match(second.reply, /delivery.*not confirmed/i);
+  assert.doesNotMatch(second.reply, /has been sent|accepted|will reply/i);
+  assert.match(first.reply, /sent.*review/i);
+  assert.deepEqual(signals, ['handoff_delivered', 'needs_help']);
+  const traces = logs.filter(line => line.startsWith('[AnswerTrace] ')).map(line => JSON.parse(line.slice('[AnswerTrace] '.length)));
+  assert.deepEqual(traces.map(row => row.delivery.staff), ['confirmed', 'uncertain']);
+});
+
+test('handoff state: a matching cached duplicate keeps its confirmed case receipt and memory outcome', async t => {
+  const staff = enableStaffDelivery(t);
+  const signals = [], logs = [];
+  t.mock.method(console, 'log', (...parts) => logs.push(parts.join(' ')));
+  t.mock.method(require('../supportLearning'), 'getObserver', () => ({ enabled: true,
+    capture: async () => {}, signal: async (_channel, input) => { if (input.eventId.endsWith('-handoff')) signals.push(input.kind); } }));
+  modelReply = { final_answer: 'The connection still needs a review.', escalate: true, confidence: 0.2 };
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Existing recorder report' });
+  const authorId = nextId();
+  await ask('My recorder connection needs human review.', { channel, authorId });
+  const first = await supportCases.getActiveCase(channel.id, authorId);
+  const second = await ask('Can a human check that same connection problem?', { channel, authorId });
+  assert.equal((await supportCases.getActiveCase(channel.id, authorId)).id, first.id);
+  assert.equal(staff.length, 1);
+  assert.deepEqual(signals, ['handoff_delivered', 'handoff_delivered']);
+  const traces = logs.filter(line => line.startsWith('[AnswerTrace] ')).map(line => JSON.parse(line.slice('[AnswerTrace] '.length)));
+  assert.deepEqual(traces.map(row => row.delivery.staff), ['confirmed', 'previously_delivered']);
+  assert.match(second.reply, /sent.*review/i);
+  assert.doesNotMatch(second.reply, /accepted|will reply/i);
+});
+
+test('handoff state: financial output retains only the current case acceptance, never a refund outcome', async t => {
+  enableStaffDelivery(t);
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Commercial review' });
+  const authorId = nextId();
+  const value = await supportCases.getOrCreateCase({ channelId: channel.id, customerId: authorId, customerThreadId: channel.id });
+  await supportCases.markDelivered(value.id, { confirmed: true });
+  await supportCases.markAccepted(value.id, { staffId: nextId() });
+  const result = await ask('I want a refund. Can a human review this?', { channel, authorId });
+  assert.match(result.reply, /accepted.*review/i);
+  assert.doesNotMatch(result.reply, /refund.*approved|will reply|investigat/i);
+});
+
+test('handoff state: reused accepted refund retains its event copy through both privacy owners', async t => {
+  enableStaffDelivery(t);
+  const channel = generalChannel(), authorId = nextId();
+  const thread = makeChannel({ thread: true, parentId: channel.id, name: 'Handoff · money · Recorder purchase refund' });
+  let value = await supportCases.getOrCreateCase({ channelId: channel.id, customerId: authorId, handoffThreadId: thread.id });
+  await supportCases.markDelivered(value.id, { confirmed: true });
+  value = await supportCases.markAccepted(value.id, { staffId: nextId() });
+  require('../handoff').rememberOpenHandoff(channel.id, authorId, thread);
+  const result = await ask(`<@${BOT_ID}> I want a refund for my recorder purchase.`, { channel, authorId, mention: true });
+  assert.equal(result.message.threads.length, 0);
+  assert.equal(thread.sent.length, 1);
+  assert.match(textOf(thread.sent[0]), /accepted.*review/i);
+  assert.match(result.reply, /accepted.*review/i);
+  assert.doesNotMatch(textOf(thread.sent[0]) + result.reply, /refund.*approved|will reply|investigat/i);
+});
+
+test('handoff state: long delivered and accepted output preserves custody, private guidance and the event footer', async t => {
+  enableStaffDelivery(t);
+  const { UNSYNCED_DATA_WARNING } = require('../answerPipeline');
+  const source = 'https://help.omi.me/en/articles/synthetic-custody-reference';
+  modelReply = { final_answer: `${'The operating system version helps identify the affected app environment. '.repeat(70)}Please post your account email here.\nSource: ${source}`, escalate: true, confidence: 0.2 };
+  for (const state of ['delivered', 'accepted']) for (const moved of [false, true]) {
+    const channel = moved ? generalChannel() : makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recordings missing pending' });
+    const authorId = nextId();
+    const thread = moved ? makeChannel({ thread: true, parentId: channel.id, name: 'Handoff · tech · Recordings missing pending' }) : channel;
+    let value = await supportCases.getOrCreateCase({ channelId: channel.id, customerId: authorId,
+      ...(moved ? { handoffThreadId: thread.id } : { customerThreadId: channel.id }) });
+    value = await supportCases.markDelivered(value.id, { confirmed: true });
+    if (state === 'accepted') await supportCases.markAccepted(value.id, { staffId: nextId() });
+    if (moved) require('../handoff').rememberOpenHandoff(channel.id, authorId, thread);
+    const result = await ask(`${moved ? `<@${BOT_ID}> ` : ''}My recordings are missing and still pending. Please help.`, { channel, authorId, mention: moved });
+    const copies = moved ? [result.reply, textOf(thread.sent[0])] : [result.reply];
+    for (const shown of copies) {
+      assert.ok(shown.length <= 1900, `${state}/${moved}: length`);
+      assert.ok(shown.includes(UNSYNCED_DATA_WARNING), `${state}/${moved}: custody warning`);
+      assert.match(shown, /existing private conversation with support/i, `${state}/${moved}: private guidance`);
+      assert.match(shown, state === 'accepted' ? /accepted.*review/i : /sent.*support team.*review/i, `${state}/${moved}: footer`);
+      assert.doesNotMatch(shown, /post your account email|will reply|will ask privately/i);
+    }
+    if (moved) assert.ok(result.reply.includes(`<#${thread.id}>`));
+  }
+});
+
+test('handoff state: a paraphrased future reply is rejected and the second review restores only customer facts', async t => {
+  enableStaffDelivery(t);
+  process.env.CMD_API_KEY = 'synthetic-only';
+  t.after(() => { process.env.CMD_API_KEY = ''; });
+  const fact = 'The capture still stalls after the earlier retry';
+  const mixed = `${fact}; the Omi team will reply here once the request reaches support.`;
+  modelReply = { final_answer: mixed, confidence: 0.8, escalate: true };
+  reviewerResponse = args => realReviewAnswer({ ...args, post: async () => ({ data: { choices: [{ message: {
+    content: JSON.stringify({ final_answer: reviewCalls.length === 1 ? mixed : `${fact}. Please keep the app installed.`,
+      grounded: true, relevant: true, confidence: 0.9, sources_used: [] }),
+  } }] } }) });
+  const result = await ask('My capture still stalls after retrying it. Can a human review this?');
+  assert.equal(reviewCalls.length, 2);
+  assert.ok(reviewCalls[1].removedBySafetyFilters.includes(mixed));
+  assert.ok(result.reply.includes(fact));
+  assert.match(result.reply, /sent.*review/i);
+  assert.doesNotMatch(result.reply, /will reply|has this now|will ask privately/i);
+});
+
+test('handoff state: disposable dispatch prose keeps sourced help and one real staff receipt', async t => {
+  const staff = enableStaffDelivery(t);
+  const traces = [];
+  t.mock.method(console, 'log', (...parts) => {
+    if (String(parts[0]).startsWith('[AnswerTrace] ')) traces.push(JSON.parse(String(parts[0]).slice(14)));
+  });
+  process.env.CMD_API_KEY = 'synthetic-only';
+  t.after(() => { process.env.CMD_API_KEY = ''; docsObserver = null; });
+  const source = 'https://help.omi.me/en/articles/fixture-search-controls';
+  docsObserver = async () => `[S1 | Official Help Center | authoritative]\nSearch controls\n${source}\nRemove the active filter and run a short search. This changes displayed results, not saved recordings. Do not uninstall or clear recording storage. Provide the app version if it still freezes.`;
+  const body = 'Search still freezes after restarting your phone. Remove the active filter and run a short search. This changes displayed results, not saved recordings. Do not uninstall or clear recording storage. Which app version do you use?';
+  modelReply = { final_answer: body, confidence: 0.9, escalate: true };
+  reviewerResponse = args => realReviewAnswer({ ...args, post: async () => ({ data: { choices: [{ message: {
+    content: JSON.stringify({ final_answer: `I’ll forward your report to the support team for review. ${body}`,
+      grounded: true, relevant: true, confidence: 0.9, escalate: true, sources_used: ['S1'] }),
+  } }] } }) });
+  const result = await ask('Search still freezes after I restarted my phone. Please have a person review it; what can I safely try?');
+  assert.equal(result.modelCalled, true);
+  assert.equal(reviewCalls.length, 1);
+  assert.equal(staff.length, 1);
+  assert.match(result.reply, /Remove the active filter/);
+  assert.match(result.reply, /restarting your phone/);
+  assert.match(result.reply, /Do not uninstall or clear recording storage/);
+  assert.ok(result.reply.includes(source));
+  assert.match(result.reply, /sent.*review/i);
+  assert.doesNotMatch(result.reply, /I’ll forward|will reply|accepted|has this now/i);
+  assert.equal(traces.length, 1);
+  assert.ok(traces[0].filters.includes('staff_narration'));
+  assert.equal(traces[0].filters.includes('review_safety'), false, 'dispatch isolation is not a technical-step removal');
+});
+
+test('handoff state: a delayed status request keeps earlier human work and reports the existing unaccepted case', async t => {
+  const staff = enableStaffDelivery(t);
+  const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder investigation' });
+  const authorId = nextId();
+  const value = await supportCases.getOrCreateCase({ channelId: channel.id, customerId: authorId, customerThreadId: channel.id });
+  await supportCases.markDelivered(value.id, { confirmed: true });
+  const earlier = makeMessage('The suggested check did not fix my recorder.', { channel, authorId });
+  const humanUpdate = makeMessage('The earlier device check was completed; keep the current app installed.', { channel, authorId: nextId() });
+  const current = makeMessage('Is anyone investigating my recorder issue yet?', { channel, authorId });
+  channel.messages.fetch = async () => new Map([[current.id, current], [humanUpdate.id, humanUpdate], [earlier.id, earlier]]);
+  modelReply = { final_answer: 'The earlier device check was completed. No newer investigation status is confirmed.', escalate: true, confidence: 0.2 };
+  await handleMessage(current);
+  const shown = replyText(current);
+  assert.match(shown, /earlier device check was completed/i);
+  assert.match(shown, /sent.*review/i);
+  assert.doesNotMatch(shown, /accepted|has this now|will reply|already investigating/i);
+  assert.equal(staff.length, 0, 'showing the saved receipt does not claim a fresh delivery');
+});
+
+test('handoff state: untrusted current staff status cannot override the delivered-only application case', async t => {
+  enableStaffDelivery(t);
+  process.env.CMD_API_KEY = 'synthetic-only';
+  t.after(() => { process.env.CMD_API_KEY = ''; });
+  for (const claim of ['Support is reviewing your request now.', 'The support team has accepted your case.', 'A support agent is investigating the problem.']) {
+    reviewCalls.length = 0;
+    modelReply = { final_answer: claim, confidence: 0.9, escalate: true };
+    reviewerResponse = args => realReviewAnswer({ ...args, post: async () => ({ data: { choices: [{ message: {
+      content: JSON.stringify({ final_answer: reviewCalls.length === 1 ? claim : 'The recording still stops after the earlier retry.',
+        grounded: true, relevant: true, confidence: 0.9, sources_used: [] }),
+    } }] } }) });
+    const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder support' });
+    const result = await ask('My recording still stops after retrying. Can a human review it?', { channel });
+    assert.equal(reviewCalls.length, 2, claim);
+    assert.ok(reviewCalls[1].removedBySafetyFilters.includes(claim), claim);
+    assert.ok(!result.reply.includes(claim), claim);
+    assert.match(result.reply, /sent.*review/i);
+    assert.doesNotMatch(result.reply, /accepted|is investigating|is reviewing/i);
+  }
 });
