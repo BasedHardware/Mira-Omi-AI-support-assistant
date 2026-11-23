@@ -153,6 +153,30 @@ function stripStaffLies(text) {
   return cleaned;
 }
 
+// Delivery is composed by the application after review. A closed, standalone
+// future dispatch announcement contains no diagnostic fact or permission to
+// act. Discard only that bounded boilerplate before judging the useful body.
+// Mixed clauses, completed actions, staff commitments and dependent follow-ups
+// remain ordinary destructive removals and must pass the existing second look.
+function detachPlannedDispatchNotices(text, { handoffPlanned = false } = {}) {
+  const original = String(text || '');
+  if (!handoffPlanned) return { answer: original, removed: [] };
+  const notice = /^I(?:['’]ll| will| am going to) (?:pass|forward|send|hand) (?:this|it|that|your (?:request|report|case|details))(?: (?:on|along|over))? to (?:(?:the|our|a|an) )?(?:support team|team|staff|support|engineers?|person|human)(?: for review)?[.!]$/u;
+  const units = original.split(/(?<=[.!?])\s+|\n+/u).map(value => value.trim()).filter(Boolean);
+  // Do not guess the antecedent of prose that may rely on the dispatch. Nor
+  // reinterpret a quoted, fenced or conditional conversation as an event slot.
+  const dependency = /^(?:they|them|their|that|this|it|which|so|therefore|because|once|after|then|only|until|when|unless|otherwise)\b/iu;
+  const matches = units.filter(unit => notice.test(unit));
+  if (!matches.length || /[`“”"<>]|^\s*>/mu.test(original) ||
+      units.some((unit, index) => notice.test(unit) && units[index + 1] && dependency.test(units[index + 1]))) {
+    return { answer: original, removed: [] };
+  }
+  const answer = original.split('\n').map(line => line.split(/(?<=[.!?])\s+/u)
+    .filter(unit => !notice.test(unit.trim())).join(' ')).join('\n')
+    .replace(/\n{3,}/g, '\n\n').trim();
+  return { answer, removed: matches };
+}
+
 const HOWTO_BLEED = [
   /\bbluetooth\b/i,
   /\bre-?pair/i,
@@ -533,6 +557,7 @@ function stripUnverifiedOutcomeClaims(answer, { question = '', financialContext 
 }
 
 module.exports = {
+  detachPlannedDispatchNotices,
   stripUnverifiedOutcomeClaims,
   looksLikeStaffLie,
   looksLikeStaffFuturePromise,

@@ -3730,6 +3730,37 @@ test('handoff state: a paraphrased future reply is rejected and the second revie
   assert.doesNotMatch(result.reply, /will reply|has this now|will ask privately/i);
 });
 
+test('handoff state: disposable dispatch prose keeps sourced help and one real staff receipt', async t => {
+  const staff = enableStaffDelivery(t);
+  const traces = [];
+  t.mock.method(console, 'log', (...parts) => {
+    if (String(parts[0]).startsWith('[AnswerTrace] ')) traces.push(JSON.parse(String(parts[0]).slice(14)));
+  });
+  process.env.CMD_API_KEY = 'synthetic-only';
+  t.after(() => { process.env.CMD_API_KEY = ''; docsObserver = null; });
+  const source = 'https://help.omi.me/en/articles/fixture-search-controls';
+  docsObserver = async () => `[S1 | Official Help Center | authoritative]\nSearch controls\n${source}\nRemove the active filter and run a short search. This changes displayed results, not saved recordings. Do not uninstall or clear recording storage. Provide the app version if it still freezes.`;
+  const body = 'Search still freezes after restarting your phone. Remove the active filter and run a short search. This changes displayed results, not saved recordings. Do not uninstall or clear recording storage. Which app version do you use?';
+  modelReply = { final_answer: body, confidence: 0.9, escalate: true };
+  reviewerResponse = args => realReviewAnswer({ ...args, post: async () => ({ data: { choices: [{ message: {
+    content: JSON.stringify({ final_answer: `I’ll forward your report to the support team for review. ${body}`,
+      grounded: true, relevant: true, confidence: 0.9, escalate: true, sources_used: ['S1'] }),
+  } }] } }) });
+  const result = await ask('Search still freezes after I restarted my phone. Please have a person review it; what can I safely try?');
+  assert.equal(result.modelCalled, true);
+  assert.equal(reviewCalls.length, 1);
+  assert.equal(staff.length, 1);
+  assert.match(result.reply, /Remove the active filter/);
+  assert.match(result.reply, /restarting your phone/);
+  assert.match(result.reply, /Do not uninstall or clear recording storage/);
+  assert.ok(result.reply.includes(source));
+  assert.match(result.reply, /sent.*review/i);
+  assert.doesNotMatch(result.reply, /I’ll forward|will reply|accepted|has this now/i);
+  assert.equal(traces.length, 1);
+  assert.ok(traces[0].filters.includes('staff_narration'));
+  assert.equal(traces[0].filters.includes('review_safety'), false, 'dispatch isolation is not a technical-step removal');
+});
+
 test('handoff state: a delayed status request keeps earlier human work and reports the existing unaccepted case', async t => {
   const staff = enableStaffDelivery(t);
   const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder investigation' });

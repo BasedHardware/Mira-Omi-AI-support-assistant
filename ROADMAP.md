@@ -9,6 +9,10 @@
 **Earlier October26 checkpoint:** #86 merged647b549 after1202/no-model8, exact-head hosted Node20/24/real PostgreSQL, independent review and merged-main CI. [Lifecycle details](docs/GITHUB_NOTICE_LIFECYCLE.md). The old PR backlog is cleared; new work is Mira repository presentation and local #83 source provenance/conflict handling. #62 stays open for reproduced narration/context loss despite merged diagnostics. Production stays c6f482d; no paid run, public Omi test issue or memory enablement. Main implementation64/100; delivery56/100;44 left. Technical identifiers remain unchanged under the Mira product name.
 
 
+## November23 — comparison failed; repair stays draft
+
+The approved #98 comparison used41 requests: candidate10/12 versus main2/12, with one candidate-only useful-answer loss blocking the relative gate. A general offline repair passes targeted reviewer/handler checks and restores the captured case without changing the other11 candidate finals. Original results stay failed; #109’s conditional comparison remains unused/held. Final maintainer self-review, current-head CI and the repaired-candidate quality disposition precede readiness. Shared Hindi custody-warning loss remains open. [Master plan](docs/SUPPORT_MASTER_PLAN.md) and [findings](docs/HANDOFF_COMPARISON_2026-11-23.md) retain all unfinished scope.
+
 ## Earlier audited dashboard — October 26, 2026
 
 #88 merged884fb46, #87 merged928676b and #86 merged647b549 after their gates; none was deployed separately. Memory-notice wording approval is not publication/enablement. #86's approved30-day retention/replay/erasure implementation is awaiting release. No repeat policy question or paid run. Delivery score56/100 is unchanged; production remains c6f482d, optional controls/automatic deploy off at the fresh read.
