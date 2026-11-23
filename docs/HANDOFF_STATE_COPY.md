@@ -12,6 +12,8 @@ Financial presentation still filters unsupported approvals and outcomes from the
 
 All existing handoff locales distinguish delivery, acceptance and unconfirmed state. The existing acceptance-notice workflow remains intact. Earlier human work stays valid history and does not establish a later response commitment. The answer/reviewer guidance now makes this distinction explicit. A bounded multilingual guard removes untrusted staff-response and outreach promises through the existing parsing, draft, review and presentation owners. Complete removed units enter the existing bounded audit; a destructive removal invalidates review and the existing second look may restore independently supported customer facts. No arbitrary clause splitting or additional model round trip is introduced.
 
+The same authority boundary rejects bounded English current-case acceptance, ownership and active-investigation predicates from untrusted prose. It preserves closed, whole-unit uncertainty statements and negative password/code security rules, plus explicitly attributed earlier work. A disclaimer or security rule cannot exempt an adjoining fresh status claim: mixed units remain in the removal audit. Unbound pronouns use communication predicates rather than generic product verbs, so a prediction that recordings provide searchable text is not treated as staff outreach. These are bounded grammars, not a complete natural-language status verifier.
+
 Acceptance checklist:
 
 - [x] Observed red-before composer and actual-handler failures using independently written fictional inputs.
@@ -20,6 +22,7 @@ Acceptance checklist:
 - [x] Preserve financial filtering while carrying only the authorized static event footer.
 - [x] Exercise long delivered/accepted replies on ordinary and moved/reused surfaces with intact custody warnings, conditional private guidance and the Discord length limit.
 - [x] Cover existing localized handoff and private-intake copy, mixed-unit audit and second-review fact restoration.
+- [x] Reject untrusted current staff ownership/investigation, preserve closed uncertainty, negative security guidance, historical attribution and product pronouns, and reject mixed-unit attempts to borrow those qualifiers.
 - [ ] Freeze current runtime, complete independent final review and current-commit CI.
 - [ ] Complete the separately authorized bounded #98 comparison and full-reading relative gate. Guidance/filter changes make this a required quality gate; earlier copy-only no-paid assessments do not apply.
 - [ ] Merge, manual release and scoped production verification under their separate authorization.

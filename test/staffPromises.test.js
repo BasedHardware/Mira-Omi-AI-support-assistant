@@ -68,3 +68,53 @@ test('removing a mixed promise preserves the complete original unit for independ
   assert.equal(checked.escalate, true);
   assert.ok(getRemovalAudit(checked).removed.includes(mixed));
 });
+
+test('current staff ownership and investigation claims require application authority', () => {
+  for (const claim of [
+    'Support is reviewing your request now.',
+    'The support team has accepted your case.',
+    'A support agent is investigating the problem.',
+    'Your case has been accepted by the support team.',
+    'Your request is with support now.',
+  ]) {
+    assert.equal(looksLikeStaffLie(claim), true, claim);
+    assert.equal(stripPingNarration(claim), '', claim);
+    assert.ok(!escalateReply(claim, { pinged: true }).includes(claim), claim);
+  }
+});
+
+test('closed uncertainty, negative security policy and unrelated product predictions stay useful', () => {
+  for (const text of [
+    'I cannot guarantee that the support team will reply in this thread.',
+    'I cannot guarantee the support team will reply in this thread.',
+    'I cannot guarantee that a person on the team will reply in this thread.',
+    'I cannot confirm whether support is reviewing your request.',
+    'Support will never ask for your password.',
+    'The support team will never ask you for your password or verification code.',
+    'A person on the team will never ask for your password.',
+    'Recordings are transcribed locally. They will provide searchable text after processing.',
+    'Earlier support wrote: “The support team is reviewing your request.”',
+    'Earlier, support wrote: “The support team is reviewing your request.”',
+    'Earlier support wrote: “A person on the team is reviewing your request.”',
+    'Support replied earlier with the completed device check.',
+    'Support is reviewing this policy document.',
+    'A support agent needs to review your request.',
+  ]) {
+    assert.equal(looksLikeStaffLie(text), false, text);
+    assert.equal(stripStaffLies(text), text, text);
+    assert.equal(stripPingNarration(text), text, text);
+  }
+});
+
+test('a closed disclaimer or security policy cannot exempt an adjoining unsupported claim', () => {
+  for (const mixed of [
+    'I cannot guarantee that the support team will reply, but support is investigating your case now.',
+    'I cannot confirm whether support is reviewing your request; the team will reply tomorrow.',
+    'Support will never ask for your password; they will contact you privately soon.',
+    'Earlier support wrote: “The check was completed”; support has accepted your request now.',
+  ]) {
+    const parsed = parseAgentJson(JSON.stringify({ final_answer: mixed, confidence: 1 }));
+    assert.ok(getRemovalAudit(parsed).removed.includes(mixed), mixed);
+    assert.equal(parsed.final_answer.includes(mixed), false, mixed);
+  }
+});

@@ -3748,3 +3748,24 @@ test('handoff state: a delayed status request keeps earlier human work and repor
   assert.doesNotMatch(shown, /accepted|has this now|will reply|already investigating/i);
   assert.equal(staff.length, 0, 'showing the saved receipt does not claim a fresh delivery');
 });
+
+test('handoff state: untrusted current staff status cannot override the delivered-only application case', async t => {
+  enableStaffDelivery(t);
+  process.env.CMD_API_KEY = 'synthetic-only';
+  t.after(() => { process.env.CMD_API_KEY = ''; });
+  for (const claim of ['Support is reviewing your request now.', 'The support team has accepted your case.', 'A support agent is investigating the problem.']) {
+    reviewCalls.length = 0;
+    modelReply = { final_answer: claim, confidence: 0.9, escalate: true };
+    reviewerResponse = args => realReviewAnswer({ ...args, post: async () => ({ data: { choices: [{ message: {
+      content: JSON.stringify({ final_answer: reviewCalls.length === 1 ? claim : 'The recording still stops after the earlier retry.',
+        grounded: true, relevant: true, confidence: 0.9, sources_used: [] }),
+    } }] } }) });
+    const channel = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Recorder support' });
+    const result = await ask('My recording still stops after retrying. Can a human review it?', { channel });
+    assert.equal(reviewCalls.length, 2, claim);
+    assert.ok(reviewCalls[1].removedBySafetyFilters.includes(claim), claim);
+    assert.ok(!result.reply.includes(claim), claim);
+    assert.match(result.reply, /sent.*review/i);
+    assert.doesNotMatch(result.reply, /accepted|is investigating|is reviewing/i);
+  }
+});

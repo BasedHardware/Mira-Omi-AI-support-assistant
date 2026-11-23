@@ -1,5 +1,5 @@
 const answerTrace = require('./answerTrace');
-const { stripStaffLies, stripInventedLookup, looksLikeStaffFuturePromise } = require('./honesty');
+const { stripStaffLies, stripInventedLookup, looksLikeUnverifiedStaffState, isClosedStaffContext } = require('./honesty');
 const { createHash } = require('node:crypto');
 const { recordStage } = require('./answerStageEvidence');
 const { isPreviousPost } = require('./supportContextFormat');
@@ -492,7 +492,8 @@ function isPingNarration(text) {
   // Classify displayed words without allowing Markdown to hide a predicate;
   // the original text, conditions and punctuation are retained when allowed.
   const shown = String(text || '').replace(/[*_~`]/g, '').trim();
-  if (looksLikeStaffFuturePromise(shown)) return true;
+  if (isClosedStaffContext(shown)) return false;
+  if (looksLikeUnverifiedStaffState(shown)) return true;
   if (PING_NARRATION.some(re => re.test(shown))) return true;
   return /person on the team/i.test(shown) && !classifyReviewRequirement(shown).recognized;
 }
