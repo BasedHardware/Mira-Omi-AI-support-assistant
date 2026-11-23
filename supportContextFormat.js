@@ -3,7 +3,9 @@ function isPreviousPost(entry) {
   return entry?.source === 'previous_post' && entry.trust === 'conversation_only';
 }
 function splitHistory(entries = []) {
-  return { current: entries.filter(entry => !isPreviousPost(entry)), previous: entries.filter(isPreviousPost).slice(0,2) };
+  const isSource = entry => entry?.caseContext === 'shared_source' && entry.role === 'source_hint';
+  return { current: entries.filter(entry => !isPreviousPost(entry) && !isSource(entry)),
+    previous: entries.filter(isPreviousPost).slice(0,2), sources: entries.filter(isSource).slice(0,2) };
 }
 function previousContextBlock(entries = []) {
   const previous = entries.filter(isPreviousPost).slice(0,2);

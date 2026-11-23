@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "auditedOn": "2026-11-23",
+  "timezone": "Asia/Kolkata",
+  "auditedRuntimeOnMain": "c22ca9338fcbcc26eaa427dfea5c5071aaaf82e8",
+  "notAccuracy": true,
+  "rubric": "Equal-item technical completion of the original twelve real-thread issues97\u2013108; code on main is separate from release/customer verification.",
+  "batch": {
+    "issueNumbers": [
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108
+    ],
+    "completedOnMain": [
+      98,
+      100
+    ],
+    "remainingOpen": [
+      97,
+      99,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108
+    ],
+    "total": 12,
+    "completed": 2,
+    "left": 10,
+    "doneOutOf100Rounded": 17,
+    "leftOutOf100Rounded": 83
+  },
+  "merges": {
+    "110": "8674d0e388d0b241df81f6c35b9d0fa21a9ac912",
+    "109": "c22ca9338fcbcc26eaa427dfea5c5071aaaf82e8"
+  },
+  "mainCI": {
+    "run": 45224394975,
+    "node20": "success",
+    "node24": "success",
+    "postgres": "success"
+  },
+  "release": {
+    "issue": 111,
+    "url": "https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/issues/111",
+    "confirmedNewFixes": 0,
+    "newFixesAwaitingVerification": 2,
+    "productionState": "not_freshly_verified",
+    "deploymentRequestedByThisWork": false,
+    "customerResolutionClaimed": false
+  },
+  "comparisons": {
+    "A": {
+      "candidatePass": 11,
+      "baselinePass": 2,
+      "casesPerArm": 12,
+      "baseline": "repository main130319d",
+      "requests": 40
+    },
+    "B": {
+      "candidatePass": 11,
+      "baselinePass": 10,
+      "casesPerArm": 12,
+      "baseline": "repaired H b77305f",
+      "requests": 44
+    },
+    "replacementRequests": 84,
+    "replacementCeiling": 192,
+    "preservedFailedFirstARequests": 41,
+    "totalRequests": 125,
+    "review": "maintainer_self_review",
+    "independenceClaimed": false,
+    "wholeProductAccuracyClaimed": false
+  },
+  "historicalMilestoneLedger": {
+    "file": "SUPPORT_PROGRESS.json",
+    "auditedOn": "2026-10-28",
+    "implementationOutOf100": 64,
+    "combinedDeliveryOutOf100": 56,
+    "freshlyReaudited": false
+  },
+  "remainingRuntimeDrafts": [
+    94,
+    96
+  ]
+}

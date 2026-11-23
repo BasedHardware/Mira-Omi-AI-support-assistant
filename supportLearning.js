@@ -69,14 +69,19 @@ function createObserver(memory, { historyBudgetMs = 1500, maxPendingWrites = 100
         return scope && scope.customerId === String(customerId || '') ? memory.signal({ ...input, ...scope }) : false;
       });
     },
-    async history(channel, excludeId, liveMessages, customerId) {
+    async history(channel, excludeId, liveMessages, customerId, projectMessages) {
       const scope = memory.scopeFor(channel);
       if (!scope || scope.customerId !== String(customerId || '')) return [];
       const matches = (a, b) => a?.guildId === b.guildId && a.forumId === b.forumId && a.threadId === b.threadId && a.customerId === b.customerId;
-      const live = liveMessages.filter(message => {
+      const rawLive = liveMessages.filter(message => {
         const other = memory.scopeFor(message.channel);
         return matches(other, scope);
-      }).map(entry).filter(Boolean);
+      });
+      const project = (messages, owner = scope.customerId, excluded = excludeId) => projectMessages
+        ? projectMessages(messages, { customerId: owner, excludeId: excluded })
+          .map(row => ({ ...row, content: row.role === 'source_hint' ? row.content : safeMemoryText(row.content) }))
+        : messages.map(entry).filter(Boolean);
+      const live = project(rawLive);
       const fallback = mergeHistory([], live, excludeId);
       if (!memory.contextEnabled) return fallback;
       if (pendingReads >= readCapacity) {
@@ -99,7 +104,7 @@ function createObserver(memory, { historyBudgetMs = 1500, maxPendingWrites = 100
         }
         if (!permitted() || !matches(memory.scopeFor(message?.channel), expected) || String(message?.id) !== item.id || message.createdTimestamp !== item.at) return null;
         const value = entry(message);
-        return value?.author === item.author ? value : null;
+        return value?.author === item.author ? message : null;
       }
       async function previousPost(candidate) {
         if (!permitted()) return null;
@@ -113,8 +118,9 @@ function createObserver(memory, { historyBudgetMs = 1500, maxPendingWrites = 100
         const references = await memory.contextReferences(candidate);
         if (!permitted() || !await memory.allowsContext(scope) || !permitted()) return null;
         let storedOutcome = candidate.outcome;
-        const values = (await Promise.all(references.filter(item => ['customer','bot'].includes(item.author)).slice(-4)
+        const rawValues = (await Promise.all(references.filter(item => ['customer','bot'].includes(item.author)).slice(-4)
           .map(item => readMessage(post,item,candidate,() => { storedOutcome = 'unknown'; })))).filter(Boolean);
+        const values = project(rawValues, candidate.customerId, '').filter(row => ['customer', 'bot'].includes(row.author));
         if (!permitted() || !values.length) return null;
         const outcomes = { answer_sent: 'answered', handoff_delivered: 'handed_off', resolved: 'resolved', needs_help: 'needs_help', reopened: 'needs_help' };
         const owner = values.filter(value => value.author === 'customer').slice(-3);
@@ -143,7 +149,7 @@ function createObserver(memory, { historyBudgetMs = 1500, maxPendingWrites = 100
           Promise.all(earlier.map(previousPost)),
         ]);
         if (!permitted() || !await memory.allowsContext(scope) || !permitted()) return fallback;
-        return [...prior.filter(Boolean), ...mergeHistory(confirmed.filter(Boolean), live, excludeId)];
+        return [...prior.filter(Boolean), ...mergeHistory([], project([...confirmed.filter(Boolean), ...rawLive]), excludeId)];
       };
       pendingReads++;
       const running = operation();

@@ -6,6 +6,8 @@ const express = require('express');
 const db = require('./db');
 const { queryAgent, reviewAnswer, understandQuestion, contextualQuestion, officialHandoffLinks } = require('./commandcode');
 const { splitHistory } = require('./supportContextFormat');
+const { projectCaseHistory, customerHistory } = require('./caseContext');
+const { sharedSourceHints } = require('./contextSources');
 const telegram = require('./telegram');
 const {
   isOnCooldown,
@@ -442,14 +444,10 @@ async function directContinuationHistory(message) {
     original = await fetchReferencedMessage(referenced);
   }
 
-  const entries = [];
-  const originalText = messageCaption(original?.content || '');
-  if (originalText) {
-    entries.push({ author: original?.author?.username || 'customer', content: originalText });
-  }
-  const botText = String(referenced.content || '').trim();
-  if (botText) entries.push({ author: 'bot', content: botText });
-  return clipThreadHistory(entries);
+  const originalContext = original ? { ...original, content: messageCaption(original.content) } : null;
+  return clipThreadHistory(projectCaseHistory([originalContext, referenced, message].filter(Boolean), {
+    customerId: message.author.id, botId: client.user.id, excludeId: message.id, isStaff: isStaffMessage,
+  }));
 }
 
 async function hasEarlierMessages(channel, messageId) {
@@ -462,21 +460,25 @@ async function hasEarlierMessages(channel, messageId) {
   }
 }
 
-async function getHistory(channel, excludeId, customerId) {
+async function getHistory(channel, currentMessage) {
   // Parent #vector-test is a pile of unrelated tickets. Only follow-ups
   // inside an existing Handoff or help post may see prior messages.
   const samePost = channel.isThread?.() && (isHelpThread(channel) || isTestChannel(channel));
   if (!isTrustedHandoffThread(channel) && !samePost) return [];
   const messages = await channel.messages.fetch({ limit: 50 });
-  if (learning().contextEnabled && learning().supports(channel)) return clipThreadHistory(await learning().history(channel, excludeId, [...messages.values()], customerId));
-  const entries = [...messages.values()]
-    .reverse()
-    .filter((m) => m.id !== excludeId)
-    .map((m) => ({
-      author: m.author.bot ? 'bot' : m.author.username,
-      content: m.content,
-    }));
-  return clipThreadHistory(entries);
+  // Keep raw Discord identity/reply evidence until after customer projection.
+  // Include the triggering message even if Discord's bounded page omitted it.
+  const live = [...new Map([...messages.values(), currentMessage].map(row => [row.id, row])).values()];
+  const project = (raw, { customerId, excludeId } = {}) => [
+    ...projectCaseHistory(raw, { customerId, excludeId, botId: client.user.id, isStaff: isStaffMessage }),
+    ...sharedSourceHints(raw, { customerId, botId: client.user.id, isStaff: isStaffMessage, excludeId }),
+  ];
+  const customerId = String(currentMessage.author.id);
+  const excludeId = currentMessage.id;
+  if (learning().contextEnabled && learning().supports(channel) && String(channel.ownerId) === customerId) {
+    return clipThreadHistory(await learning().history(channel, excludeId, live, customerId, project));
+  }
+  return clipThreadHistory(project(live.reverse(), { customerId, excludeId }));
 }
 
 async function searchKnowledge(question, guildId) {
@@ -743,18 +745,19 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
   try {
     const useThreadMetadata =
       isHelpThread(channel) || isTrustedHandoffThread(channel) || isTestChannel(channel);
-    const routeSource = [useThreadMetadata && channel.isThread?.() ? channel.name : '', question]
+    const ownsPost = String(channel.ownerId || '') === String(message.author.id);
+    const routeSource = [useThreadMetadata && channel.isThread?.() && ownsPost ? channel.name : '', question]
       .filter(Boolean)
       .join('\n');
     let contextHistory = directHistory;
-    let prior = contextHistory.map((entry) => entry.content).join('\n');
+    let prior = customerHistory(contextHistory).map((entry) => entry.content).join('\n');
     if (
       channel.isThread?.() &&
       (isHelpThread(channel) || isTrustedHandoffThread(channel) || isTestChannel(channel))
     ) {
       try {
-        contextHistory = await getHistory(channel, message.id, message.author.id);
-        prior = splitHistory(contextHistory).current.map((entry) => entry.content).join('\n');
+        contextHistory = await getHistory(channel, message);
+        prior = customerHistory(splitHistory(contextHistory).current).map((entry) => entry.content).join('\n');
       } catch (err) {
         console.error('[Bot] thread context failed:', err.message);
       }
@@ -904,7 +907,8 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
       const sourceUrls = [];
       const onSources = urls => sourceUrls.push(...urls);
       const [docsText, officialCodeText, feedbackText, releaseText] = await Promise.all([
-        relevantDocs(sourceQuestion, { queries: searchPlan.queries, subQuestions: searchPlan.subQuestions, onSources }),
+        relevantDocs(sourceQuestion, { queries: searchPlan.queries, subQuestions: searchPlan.subQuestions,
+          sourceHints: splitHistory(threadHistory).sources.map(row => row.content), onSources }),
         route.area === 'shop' ? '' : github.searchOfficialCode(sourceQuestion, { queries: searchPlan.queries, onSources }),
         router.isTechLane(route) || route.lane === 'unknown'
           ? relevantFeedback(sourceQuestion, { queries: searchPlan.queries })
