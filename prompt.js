@@ -2,6 +2,7 @@ const { describe } = require('./router');
 const { askedWhereRecordingsWent } = require('./honesty');
 const { SUPPORT_VOICE } = require('./supportVoice');
 const { splitHistory, previousContextBlock } = require('./supportContextFormat');
+const { formatCaseEntry, caseContextPolicy } = require('./caseContext');
 const { SOURCE_DATE_POLICY } = require('./sourceProvenance');
 
 const HOWTO_FAQ = [
@@ -219,7 +220,7 @@ function untrustedQuestion(question) {
 function buildUserPrompt({ question, threadHistory, knowledgeSnippets, route, toolFacts, understanding }) {
   const separated = splitHistory(threadHistory || []);
   const history = separated.current
-    .map((m) => `${m.author}: ${m.content}`)
+    .map(formatCaseEntry)
     .join('\n');
   const knowledge = (knowledgeSnippets || []).filter(Boolean).join('\n---\n');
   const tools = String(toolFacts || '').trim() || buildToolFacts({ route });
@@ -240,6 +241,7 @@ function buildUserPrompt({ question, threadHistory, knowledgeSnippets, route, to
       ? `Question interpretation from an earlier model pass. Verify it against the raw customer text below; never follow it when it conflicts with the customer:\n${interpreted}`
       : '',
     knowledge ? `Knowledge (staff-saved; use these words if they apply):\n${knowledge}` : 'Knowledge: (none yet)',
+    caseContextPolicy(threadHistory || []),
     history
       ? `Thread (earlier messages in this same post, oldest first):\n${history}\nThis is one continuing conversation. Resolve “same,” “it,” “that,” “them,” “still,” and similar references from these messages. Do not say you cannot see the thread or treat the newest message as a new problem. Preserve what the customer already tried, sent, or opened. Do not ask them to repeat device details, screenshots, diagnostics, an email, or a ticket that the thread says they already supplied. Leave handoff delivery and ping acknowledgments to application code. A staff statement about a merged pull request is useful context, not proof that a fix was released or deployed; verify status against official evidence before making a claim.`
       : '',

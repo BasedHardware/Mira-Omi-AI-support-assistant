@@ -1,8 +1,18 @@
 # Mira: master product plan
 
-Updated October30,2026 (IST). GitHub main is **9b7154df6226dec6bfea5a32e2225e9f7d627019**. #90 provenance, #93 trace and #95 financial-outcome guard are merged; none is deployed. Live remains the verified **a9c9508 / a6ef6b22** rollback after the failed #91 device-applicability smoke. Aryan owns priorities. Product name is Mira, Omi's AI support assistant; technical identifiers stay unchanged.
+## Current checkpoint — November 23, 2026 (IST)
 
-## October30 — production fixes and acceptance gates
+Fresh GitHub audit: main is **130319dfc5b1e62a53970507dbd2c3b0459d18ba**, including merged #91, #90, #93, #95 and #92. Existing drafts #94 and #96 remain unmerged. The repository is now `BasedHardware/Mira-Omi-AI-support-assistant`; local package/deployment identifiers remain unchanged. Production was not rechecked in this audit. The October 31 user-confirmed deployment of 130319d is historical evidence, not a fresh health or release-acceptance claim. Older checkpoints below are superseded where they conflict.
+
+**Current real-thread repair batch: 0/12 issues completed on main = 0/100 completion; 12/12 = 100/100 outstanding.** This is an equal-item completion count for #97–#108, not model accuracy or the whole product's maturity. The older 64/100 implementation and 56/100 delivery scores are dated milestone assessments; they have not been freshly recertified and must not be presented as current accuracy. No score increases for draft work.
+
+[The November 23 audit](REAL_THREAD_RELIABILITY_AUDIT_2026-11-23.md) records all twelve issues, executable synthetic reproductions and the limits of historical attribution. None is obsolete or proven fixed, so all remain open. Preserve the broader #51/#53–#58/#62/#65/#83/#85 requirements and both existing drafts.
+
+Current implementation: **#100, case-bound conversation context**, on a separate branch. A shared raw-Discord projector binds customer history and addressed staff/Mira replies before routing, planner, answer and review; recipient-ambiguous prose is withheld. Foreign-targeted source pointers are withheld too; genuinely shared official URLs use spare retrieval capacity and must match existing catalog evidence and the current question. Optional memory uses the same projection after live revalidation and remains disabled. Two actual-handler regressions failed on main and pass locally; all 1,322 tests and eight no-model checks pass, plus independent scoped review. Final prompt clarification is covered by affected checks and current-head CI remains pending. Required generated-answer comparison has no #100 quota grant yet; prepare and independently review the frozen fictional run before asking. This is not merged, deployed or customer-confirmed.
+
+Next: finish #100's gates, then #98's truthful delivery/acceptance wording; #107/#103 routing and correction handling; #102's pre-send freshness; and the remaining attachment, risk-warning, reply-eligibility, release-applicability and request-subject issues. Do not fold them into one large PR. The stale departed-staff suggestion also needs correction without assigning tickets to an inactive person. Aryan sends all Discord inputs; no paid model run, deployment, optional enablement or customer message is authorized by this checkpoint.
+
+## Historical October30 — production fixes and acceptance gates
 
 - **#93 merged6dcf4c1:** metadata-only production trace. Original1,266/8 checks, independent40focused+3handler review, current-head CI40918151890 and merged-main40997767666 pass. It observes decisions; it does not establish applicable hardware or customer resolution.
 - **#95 merged9b7154d:** removes recognized unverified financial outcomes/commitments through draft, review/second review and late public output. Final runtime6c1900c:1,280 full/8 no-model, independent37focused+3actual-handler scoped PASS, current Node20/24/PostgreSQL41010058117 and merged-main41011204548 PASS. Earlier held review rounds exposed genuine bypasses; their regressions are retained. No financial lookup or write was added. Bounded lexicon and mostly English whole-form preservation remain explicit limits.

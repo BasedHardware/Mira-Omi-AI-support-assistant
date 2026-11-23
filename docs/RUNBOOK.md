@@ -1,5 +1,7 @@
 # Mira operations runbook
 
+**Current November23:** Main130319d; existing drafts #94/#96. #100's case-context repair is under local verification and independent review; no merge or rollout yet. Production is not freshly verified in this audit. Use the [current master plan](SUPPORT_MASTER_PLAN.md) for gate and queue state; the October deployment details below are historical. No paid requests, deployments, optional-feature changes or Discord sends were performed for this repair.
+
 **October30 current checkpoint:** GitHub main9b7154d includes #90 provenance, #93 trace and #95 financial-outcome filtering. Live remains verified rollback a9c9508/a6ef6b22; nothing from that newer main is deployed. #92 current-contact integration passes local1,290/8 plus independent runtime review; current-head CI and final docs disposition precede merge. #96 device applicability is draft for deterministic/accuracy gates; reviewer requires a specifically approved paid comparison after repairs. #94 remains draft until fixes and exact-current checks pass; required-check installation is reserved to Aryan. Three open PRs are #92/#94/#96. No quota, deployment, optional feature or Discord input is activated by this checkpoint. [Master plan](SUPPORT_MASTER_PLAN.md) controls current status; earlier checkpoints retain history only.
 
 

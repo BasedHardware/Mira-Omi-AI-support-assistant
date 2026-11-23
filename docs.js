@@ -1,4 +1,5 @@
 const {registerPublishedSources}=require('./answerTrace');
+const { sourceHintUrls } = require('./contextSources');
 const INDEX_URL = 'https://docs.omi.me/llms.txt';
 const CLIP = 60_000;
 const {
@@ -124,12 +125,13 @@ async function rememberPages(store, pages) {
   }));
 }
 
-async function storedDocs(question, store, plannedQueries = [], { subQuestions = [], onSources } = {}) {
+async function storedDocs(question, store, plannedQueries = [], { subQuestions = [], sourceHints = [], onSources } = {}) {
   if (!store?.searchDocPages) return '';
   try {
+    const hints = sourceHintUrls(sourceHints);
     const queries = supportQueries(question, plannedQueries, { subQuestions });
     const batches = await Promise.all(
-      queries.map((query) =>
+      [...queries, ...hints].map((query) =>
         Promise.all([
           store.searchDocPages(query, 12),
           store.searchDocPages(query, 5, ['help']),
@@ -137,9 +139,11 @@ async function storedDocs(question, store, plannedQueries = [], { subQuestions =
         ])
       )
     );
-    const allSets = batches.map((batch) => batch[0].filter((row) => compatibleDevicePage(question, row)));
-    const helpSets = batches.map((batch) => batch[1].filter((row) => compatibleDevicePage(question, row)));
-    const githubSets = batches.map((batch) => batch[2].filter((row) => compatibleDevicePage(question, row)));
+    const eligible = (row, index) => compatibleDevicePage(question, row) &&
+      (index < queries.length || (row.url === hints[index - queries.length] && topPages(question, [row], 1).length > 0));
+    const allSets = batches.map((batch, index) => batch[0].filter(row => eligible(row, index)));
+    const helpSets = batches.map((batch, index) => batch[1].filter(row => eligible(row, index)));
+    const githubSets = batches.map((batch, index) => batch[2].filter(row => eligible(row, index)));
     const developerQuestion = isDeveloperIntent(question);
     const multipart = normalizeSubQuestions(subQuestions).length > 3;
     const resultSets = [...allSets, ...helpSets, ...githubSets];
@@ -168,11 +172,12 @@ async function storedDocs(question, store, plannedQueries = [], { subQuestions =
   }
 }
 
-async function relevantDocs(question, { fetchImpl, store, queries: plannedQueries = [], subQuestions = [], onSources } = {}) {
+async function relevantDocs(question, { fetchImpl, store, queries: plannedQueries = [], subQuestions = [], sourceHints = [], onSources } = {}) {
   const fetchFn = fetchImpl || fetch;
   const saved = activeStore(store);
   const queries = supportQueries(question, plannedQueries, { subQuestions });
-  const stored = await storedDocs(question, saved, plannedQueries, { subQuestions, onSources });
+  const hints = sourceHintUrls(sourceHints);
+  const stored = await storedDocs(question, saved, plannedQueries, { subQuestions, sourceHints: hints, onSources });
   if (stored) return stored;
   try {
     const indexText = await docsIndexText(fetchFn);
@@ -199,6 +204,15 @@ async function relevantDocs(question, { fetchImpl, store, queries: plannedQuerie
         if (picked.length >= 6) break;
       }
       if (picked.length >= 6) break;
+    }
+    // Hints use only spare slots after current-question/per-part selection.
+    // The official catalog and ordinary relevance/device checks still apply.
+    for (const url of hints) {
+      if (picked.length >= 6) break;
+      const page = allPages.find(page => page.url === url);
+      if (!page || seen.has(url) || !topPages(question, [page], 1).length) continue;
+      seen.add(url);
+      picked.push(page);
     }
     if (!picked.length) return '';
     const fetched = await Promise.all(picked.map(async (page) => {
