@@ -24,6 +24,16 @@ Aryan directed Codex to perform review alone. This is **maintainer self-review**
 
 Not restating every prior attempt is not automatically a failure: the supplied context must remain available and the answer must not repeat completed work. The private full-reading grade preserves each case decision and the distinction between a rejected draft and the final answer.
 
+## Replacement comparison — same known regression cases
+
+Aryan separately approved the replacement pair, replacing the unused old #109 grant. Repaired #110 runtime `b77305ff7578a249e0e34cf6f522c26c104285ef` completed another24 flows with **40 requests**, all execution-valid and source-stable. Maintainer full reading of all40 raw stages and24 finals finds **11/12 candidate passes versus main2/12**, **zero candidate-only material final-answer failures** and **zero protected-handoff selection regressions**. The relative gate passes. This repeats the same known synthetic cases; it is not a blind or product-wide accuracy measurement.
+
+The fresh q04 reviewer again wrote a standalone planned-dispatch announcement. The repair removed only that announcement, preserving the documented filter check, version question and source; the application correctly stated unconfirmed delivery. q08 still loses the custody warning in both arms. The original failed run/grade remains preserved; it is not relabelled as a pass. Replacement manifest `f1a8a9096a80b7b81cea584c4b9ea34a96269412a52f650dc240cd84d39bae23`; final run SHA-256 `e1e3f273bf9977f7af5c4c9c9cf84b9b5008447fd7c93203790101596265e2e8`.
+
+The updated #109 comparison is now running against frozen H `b77305f` and integration `9ada783`. That integration auto-merged cleanly, its handoff runtime patch ID equals the #110 patch, and 1,355 tests plus eight no-model checks pass. No result is assumed before its complete full-reading grade. No automatic rerun, merge or deployment follows.
+
+The separate `codex/romanized-custody-warning` branch repairs the shared q08 negative-clause recognition, with 1,323 local tests/eight no-model checks and exact-payload known-response replay. It is excluded from both approved frozen trials and has no PR/readiness/release claim; queue scope and its own gates remain.
+
 ## General offline repair
 
 The application owns the late receipt. Before judging useful reviewer prose, it now discards only a **closed standalone future-dispatch announcement** with a generic request object and support recipient. This is a bounded English grammar. Mixed conditions, completed events, staff-response promises, quoted/code context and dependent follow-ups cannot use it. Every other removed staff unit still invalidates review and enters the existing bounded second-look audit. Staff narration is audited before technical filtering too, so an unsafe mixed sentence cannot disappear before the audit sees it. No model stage, source, storage or staff workflow is added.
