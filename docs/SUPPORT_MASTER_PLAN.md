@@ -1,5 +1,19 @@
 # Mira: master product plan
 
+## Current checkpoint — November 23, 2026 (IST)
+
+Fresh GitHub baseline is **130319dfc5b1e62a53970507dbd2c3b0459d18ba**, including #91/#90/#93/#95/#92. Production has not been freshly checked. The October deployment paragraphs below are historical and must not be read as current health evidence. Existing #94/#96 drafts retain their unfinished requirements.
+
+The real-thread batch #97–#108 remains **0/12 completed on main: 0/100 done, 100/100 outstanding**, an equal-item completion count, not model accuracy. The older product milestone scores are dated assessments, not current accuracy measurements. [The twelve-issue audit](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/blob/codex/case-bound-thread-context/docs/REAL_THREAD_RELIABILITY_AUDIT_2026-11-23.md) preserves each separate defect; none is dropped or closed for appearance.
+
+**#98 candidate:** the current customer's recorded delivery/acceptance state controls application notices, private-intake guidance and trace outcomes. Receipt is not ownership, investigation or a response commitment. The same repair removes contradictory model guidance and audits bounded untrusted staff-status/promise claims while preserving historical reports, uncertainty, security warnings and useful product facts. Long replies reserve verified event copy alongside custody/privacy guidance. Local 1,316 tests and eight no-model checks pass; final independent review, current-head CI and the separately approved generated-answer comparison remain before readiness. [Boundary and checklist](HANDOFF_STATE_COPY.md).
+
+**#100 / draft [#109](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/pull/109):** stable-ID customer/context projection passes 1,325 tests, eight no-model checks and hosted CI at e731a21. Plain names cannot prove historical identity; unbound findings stay withheld. Its generated comparison remains required. Verify #98 against this baseline first, then #100 against the reviewed #98 integration; freeze sources, review both proposals and ask before provider quota. No quota, merge, deployment, optional enablement or customer message was performed for these repairs.
+
+Continue with #107/#103 routing, #102 freshness, then the remaining media, warning, response-eligibility, release-applicability and request-subject defects. Preserve #51/#53–#58/#62/#65/#83/#85 and the device/evidence-gate drafts. Do not substitute these two repairs for the whole product checklist.
+
+## Historical October30 checkpoint
+
 Updated October30,2026 (IST). GitHub main is **9b7154df6226dec6bfea5a32e2225e9f7d627019**. #90 provenance, #93 trace and #95 financial-outcome guard are merged; none is deployed. Live remains the verified **a9c9508 / a6ef6b22** rollback after the failed #91 device-applicability smoke. Aryan owns priorities. Product name is Mira, Omi's AI support assistant; technical identifiers stay unchanged.
 
 ## October30 — production fixes and acceptance gates

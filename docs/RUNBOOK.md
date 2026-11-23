@@ -1,5 +1,7 @@
 # Mira operations runbook
 
+**November23:** Main130319d; production not freshly checked. #98's candidate reports only the current case's recorded event: sent for review, accepted for review, unconfirmed or failed delivery. It makes no investigation, reply or timing promise. [State/copy checklist](HANDOFF_STATE_COPY.md). #100 draft109 is separate; #94/#96 remain unfinished. Current-head CI, independent review and specifically approved comparisons precede readiness; no quota, deployment, optional enablement or Discord input is activated by this checkpoint. The [master plan](SUPPORT_MASTER_PLAN.md) supersedes older states below.
+
 **October30 current checkpoint:** GitHub main9b7154d includes #90 provenance, #93 trace and #95 financial-outcome filtering. Live remains verified rollback a9c9508/a6ef6b22; nothing from that newer main is deployed. #92 current-contact integration passes local1,290/8 plus independent runtime review; current-head CI and final docs disposition precede merge. #96 device applicability is draft for deterministic/accuracy gates; reviewer requires a specifically approved paid comparison after repairs. #94 remains draft until fixes and exact-current checks pass; required-check installation is reserved to Aryan. Three open PRs are #92/#94/#96. No quota, deployment, optional feature or Discord input is activated by this checkpoint. [Master plan](SUPPORT_MASTER_PLAN.md) controls current status; earlier checkpoints retain history only.
 
 
