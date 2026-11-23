@@ -1,5 +1,7 @@
 # Mira architecture
 
+**Next draft — Hindi custody wording:** a separate candidate preserves closed postposed Hindi prohibitions in the existing technical-review safety owner. It is not included in the verified runtime checkpoint below. No new model/source/store or recording operation. [Boundary/checklist](ROMANIZED_CUSTODY_WARNING.md).
+
 **Current code checkpoint — November23:** #110/#109 are merged on main runtimec22ca93; #98/#100 are closed as code-complete. Combined Node20/24/PostgreSQL CI passes. Real-thread batch completion is2/12 (17/100 done,83/100 left), not answer accuracy. Production is not freshly verified; manual release is tracked separately in [#111](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/issues/111). Existing #94/#96 and all other product requirements remain. The separate custody-warning branch is not included. The [master plan](SUPPORT_MASTER_PLAN.md) controls current status. **All older candidate, integration, comparison-hold and rollout checkpoints below are historical where superseded.** No deployment or optional enablement follows.
 
 

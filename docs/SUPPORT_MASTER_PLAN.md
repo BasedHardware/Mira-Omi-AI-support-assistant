@@ -23,6 +23,8 @@ The handoff repair uses the matching durable case for sent/accepted/unconfirmed/
 
 **Still open in this batch:** #97 paid accessory/warranty; #99 peer-directed silence; #101 supplied media/error text; #102 adjacent-message freshness; #103 current intent over an old offer; #104 account-linking intent; #105 unrelated/negated recording-loss warnings; #106 version/release applicability; #107 battery charging versus billing; #108 existing return/support-ticket status. The full [twelve-issue audit](REAL_THREAD_RELIABILITY_AUDIT_2026-11-23.md) retains the separate causes and evidence.
 
+**Warning candidate integration:** this branch adds only closed Hindi prohibition recognition, with separate local/handler/replay evidence. It is not part of the accepted A/B runs or the main checkpoint above; final integration/CI/quality disposition remain before readiness. [Checklist](ROMANIZED_CUSTODY_WARNING.md).
+
 **Next work:** prepare the already-tested separate Hindi custody-warning repair without folding it into the accepted trials; then #107/#103 routing and #102 freshness. The warning branch has1,323 tests/eight no-model checks and known-response replay but is not on this checkpoint's runtime. Both trials retain a shared Hindi warning-loss or false-warning weakness; raw staff-reason metadata can still invent attempts or absence-of-release claims after final review repairs the public answer. Preserve those #83/#105/#106 gaps. Existing draft #94/#96 requirements, #51/#53–#58/#62/#65/#83/#85 and all memory/privacy/release gates remain. Runtime PR queue is #94/#96; bookkeeping and future drafts must respect the standing three-PR cap. No deployment, customer message or optional enablement is authorized by this checkpoint.
 
 ## Historical October30 checkpoint
