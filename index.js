@@ -6,7 +6,8 @@ const express = require('express');
 const db = require('./db');
 const { queryAgent, reviewAnswer, understandQuestion, contextualQuestion, officialHandoffLinks } = require('./commandcode');
 const { splitHistory } = require('./supportContextFormat');
-const { projectCaseHistory, customerHistory } = require('./caseContext');
+const { projectCaseHistory } = require('./caseContext');
+const { routeForRequest } = require('./requestRouting');
 const { sharedSourceHints } = require('./contextSources');
 const telegram = require('./telegram');
 const {
@@ -746,34 +747,31 @@ async function answerMessageImpl(message, { directHistory = [] } = {}) {
     const useThreadMetadata =
       isHelpThread(channel) || isTrustedHandoffThread(channel) || isTestChannel(channel);
     const ownsPost = String(channel.ownerId || '') === String(message.author.id);
-    const routeSource = [useThreadMetadata && channel.isThread?.() && ownsPost ? channel.name : '', question]
-      .filter(Boolean)
-      .join('\n');
     let contextHistory = directHistory;
-    let prior = customerHistory(contextHistory).map((entry) => entry.content).join('\n');
     if (
       channel.isThread?.() &&
       (isHelpThread(channel) || isTrustedHandoffThread(channel) || isTestChannel(channel))
     ) {
       try {
         contextHistory = await getHistory(channel, message);
-        prior = customerHistory(splitHistory(contextHistory).current).map((entry) => entry.content).join('\n');
       } catch (err) {
         console.error('[Bot] thread context failed:', err.message);
       }
     }
     const caseQuestion = contextualQuestion(question, contextHistory);
-    const routeText = [routeSource, prior].filter(Boolean).join('\n');
     const groundedShop = router.needsGroundedShopAnswer(asked || question);
     const classifiedCurrent = router.classify(asked || question);
     const currentRoute = groundedShop
       ? { ...classifiedCurrent, area: 'shop', lane: 'shop', escalate: true, responseMode: 'grounded' }
       : classifiedCurrent;
-    const contextRoute = router.classify(routeText);
+    const contextRoute = routeForRequest(asked || question, {
+      currentRoute, history: splitHistory(contextHistory).current,
+      title: useThreadMetadata && channel.isThread?.() && ownsPost ? channel.name : '',
+    });
     const failedSelfService = splitHistory(contextHistory).current.some(entry => entry.author === 'bot') &&
       router.isFailedSupportFollowup(asked || question);
-    // History preserves the ticket topic, but only the newest customer message
-    // decides whether they are currently asking for a human.
+    // Scoped history can recover an elliptical subject. Only the current
+    // request decides whether the customer is now asking for a human.
     let route = {
       ...contextRoute,
       wantHuman: Boolean(currentRoute.wantHuman),

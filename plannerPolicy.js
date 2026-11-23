@@ -44,6 +44,10 @@ function routeWithUnderstanding(route, understanding, originalQuestion = '') {
     : base;
   const kind = String(understanding?.supportKind || '').trim();
   const translated = router.classify(understanding?.standaloneQuestion || '');
+  const explicit = router.classify(originalQuestion);
+  if (explicit.lane === 'money' || explicit.lane === 'privacy') {
+    return { ...current, ...explicit, escalate: true, wantHuman: current.wantHuman || explicit.wantHuman };
+  }
   // A checkout quote needs a human decision, but it is not a tracking lookup.
   if (current.intent === 'shipping_quote') return current;
   if (kind === 'order_lookup') {
@@ -60,7 +64,9 @@ function routeWithUnderstanding(route, understanding, originalQuestion = '') {
   if (kind === 'money') return { ...current, area: 'shop', lane: 'money', escalate: true };
   if (kind === 'privacy') return { ...current, area: 'privacy', lane: 'privacy', escalate: true };
   const reportedFault = /\b(?:empty|missing|vanished|lost|stopped|failed|failing|broken|error|crash(?:ed|ing)?|doesn['’]?t|won['’]?t|cannot|can['’]?t|not working|not syncing|no answer)\b/i.test(String(originalQuestion || ''));
-  const weakRoute = current.lane === 'unknown' ||
+  const inheritedCommercial = ['money', 'privacy', 'shop', 'account'].includes(current.lane) &&
+    explicit.lane === 'unknown';
+  const weakRoute = inheritedCommercial || current.lane === 'unknown' ||
     (current.lane === 'faq' && current.area === 'unknown' &&
       (router.isTechLane(translated) || understanding?.messageKind === 'new_symptom' || reportedFault) &&
       !router.looksLikeProductQuestion(originalQuestion));

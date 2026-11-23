@@ -2925,6 +2925,95 @@ test('shared-thread findings reach only their addressed customer at every answer
   assert.doesNotMatch(JSON.stringify(modelCalls.at(-1)), /SYNTHETIC-BOB/);
 });
 
+test('charging corrections and a later post question escape the earlier mistaken billing route', async t => {
+  enableStaffDelivery(t);
+  const previousKey = process.env.CMD_API_KEY;
+  t.after(() => { process.env.CMD_API_KEY = previousKey; });
+  process.env.CMD_API_KEY = 'synthetic-only';
+  const post = makeChannel({ thread: true, parentId: TEST_CHANNEL, name: 'Pendant charged before setup' });
+  const owner = nextId(); post.ownerId = owner;
+  const staffId = nextId(); process.env.STAFF_USER_IDS = staffId;
+  const raw = [];
+  const opening = makeMessage('My pendant is fully charged. Do I need Bluetooth disconnected before setup?', { channel: post, authorId: owner });
+  raw.push(opening, { id: nextId(), content: 'You need help with a payment.',
+    author: { id: BOT_ID, bot: true, username: 'mira' }, reference: { messageId: opening.id } });
+  post.messages.fetch = async () => new Map([...raw].reverse().map(row => [row.id, row]));
+  for (const content of [
+    'My pendant is fully charged. Do I need Bluetooth disconnected before setup?',
+    'No, I mean battery charging, not a payment.',
+    'The battery is charged; I am asking about pairing.',
+    'Was this forum post removed?',
+    'This post disappeared; can you check?',
+  ]) {
+    const follow = makeMessage(content, { channel: post, authorId: owner }); raw.push(follow);
+    const count = modelCalls.length;
+    modelReply = { final_answer: /post/.test(content) ? 'Which post do you mean?' : 'Which device model are you using?', confidence: 0.9 };
+    await handleMessage(follow);
+    assert.equal(modelCalls.length, count + 1, content);
+    assert.notEqual(modelCalls.at(-1).route.lane, 'money', content);
+    assert.doesNotMatch(replyText(follow), /payment|charge\. The account|order status/i);
+    assert.match(JSON.stringify(modelCalls.at(-1).threadHistory), /pendant is fully charged/);
+    raw.push(...follow.botReplies);
+    if (content.includes('asking about pairing')) raw.push({ id: nextId(),
+      content: 'SYNTHETIC-STAFF-NOTE points to the official setup instructions.',
+      author: { id: staffId, bot: false, username: 'staff' }, reference: { messageId: follow.id } });
+    if (/post/.test(content)) assert.match(JSON.stringify(modelCalls.at(-1).threadHistory), /SYNTHETIC-STAFF-NOTE/);
+  }
+});
+
+test('current technical follow-ups keep old purchase facts without inheriting an offer review', async t => {
+  const staff = enableStaffDelivery(t);
+  const previousKey = process.env.CMD_API_KEY;
+  t.after(() => { process.env.CMD_API_KEY = previousKey; });
+  process.env.CMD_API_KEY = 'synthetic-only';
+  const post = makeChannel({ thread: true, parentId: TEST_CHANNEL, name: 'Subscription offer and app problem' });
+  const owner = nextId(); post.ownerId = owner;
+  const offer = makeMessage('Can someone review the subscription offer I saw?', { channel: post, authorId: owner });
+  const failure = makeMessage('The Android app still crashes after I restarted the phone.', { channel: post, authorId: owner });
+  const purchase = makeMessage('I already bought a subscription because my minutes ran out.', { channel: post, authorId: owner });
+  const raw = [offer, failure, purchase];
+  post.messages.fetch = async () => new Map([...raw].reverse().map(row => [row.id, row]));
+  plannerSupportKind = 'technical_problem';
+  plannerStandaloneQuestion = 'The Android app crash still needs human review after a phone restart.';
+  modelReply = { final_answer: 'Which Android app version are you using?', confidence: 0.9, escalate: true };
+  for (const content of ['The Android app still crashes; I need a person to review it.', 'I am still waiting for help.']) {
+    const follow = makeMessage(content, { channel: post, authorId: owner }); raw.push(follow);
+    const count = modelCalls.length;
+    await handleMessage(follow);
+    assert.equal(modelCalls.length, count + 1, 'the current technical request must reach grounded answering');
+    assert.equal(modelCalls.at(-1).route.lane, 'tech');
+    assert.match(JSON.stringify(modelCalls.at(-1).threadHistory), /already bought a subscription/);
+    assert.match(replyText(follow), /Which Android app version/);
+    assert.doesNotMatch(replyText(follow), /offer|extension|paid plan|payment|charge/i);
+    raw.push(...follow.botReplies);
+  }
+  assert.ok(staff.length >= 1, 'the unresolved technical request still reaches private staff');
+  const before = modelCalls.length;
+  const renewed = makeMessage('Please review the subscription charge; I was billed twice.', { channel: post, authorId: owner });
+  raw.push(renewed); await handleMessage(renewed);
+  assert.equal(modelCalls.length, before, 'an explicit renewed financial request keeps the deterministic lane');
+  assert.match(replyText(renewed), /account.*team review/i);
+  assert.doesNotMatch(replyText(renewed), /app crash/);
+});
+
+test('current financial and privacy requests remain protected in a technical thread', async t => {
+  const staff = enableStaffDelivery(t);
+  const previousKey = process.env.CMD_API_KEY;
+  t.after(() => { process.env.CMD_API_KEY = previousKey; });
+  process.env.CMD_API_KEY = 'synthetic-only';
+  const post = makeChannel({ thread: true, parentId: TEST_CHANNEL, name: 'App crashes' });
+  const owner = nextId(); post.ownerId = owner;
+  const earlier = makeMessage('The Android app crashes.', { channel: post, authorId: owner });
+  post.messages.fetch = async () => new Map([[earlier.id, earlier]]);
+  for (const content of ['The battery is charged, but I was charged twice. Please review it.', 'Delete my account, please.']) {
+    const follow = makeMessage(content, { channel: post, authorId: owner });
+    await handleMessage(follow);
+    assert.equal(modelCalls.length, 0);
+    assert.doesNotMatch(replyText(follow), /Hold the center button|refund approved|has been deleted/i);
+  }
+  assert.ok(staff.length >= 1);
+});
+
 test('another customer and their post title cannot supply a protected route', async t => {
   const priorKey = process.env.CMD_API_KEY;
   t.after(() => { process.env.CMD_API_KEY = priorKey; });

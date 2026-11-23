@@ -1,9 +1,8 @@
 
-// Refunds and charges always beat a product bug. "billing reasons" in a
-// desktop 402 report is not a Shopify refund.
+// Current financial requests beat product bugs; physical battery charge
+// predicates are not transaction evidence.
 const STRONG_MONEY = [
   /\brefunds?\b/i,
-  /\bcharged\b/i,
   /\binvoice\b/i,
   /\btax(es)?\b/i,
   /\bduties\b/i,
@@ -188,6 +187,29 @@ function any(text, patterns) {
   return patterns.some((re) => re.test(s));
 }
 
+function hasTransactionCharge(text) {
+  const s = String(text || '');
+  const physical = [...s.matchAll(/\b(?:battery|device|pendant|necklace|recorder|omi)(?:\s+(?:is|was|has|had|been|being|now|already|still|fully|completely|not|never))*\s+charged\b|\bcharged\s+(?:(?:my|the|a|this|that)\s+)?(?:battery|device|pendant|necklace|recorder|omi)\b/gi)];
+  return [...s.matchAll(/\bcharged\b/gi)].some(charge => !physical.some(predicate => {
+    if (charge.index < predicate.index || charge.index >= predicate.index + predicate[0].length) return false;
+    const after = s.slice(predicate.index + predicate[0].length);
+    // Financial complements disqualify the physical reading. Another charge
+    // elsewhere in the message is checked independently, never masked globally.
+    return !/^\s*(?:[$€£₹]|(?:at\s+)?\d+(?:[.,]\d+)?\s*(?:dollars?|euros?|pounds?|rupees?|usd|eur|gbp|inr)\b|at\s+[$€£₹]|(?:twice|extra|again|for|to|purchase|order|replacement|price|fee|cost)\b)/i.test(after);
+  }));
+}
+
+function hasStrongMoney(text) {
+  return any(text, STRONG_MONEY) || hasTransactionCharge(text);
+}
+
+function hasWeakMoney(text) {
+  // Only an explicit local denial is removed; a separate positive transaction,
+  // refund, invoice or account action still takes the protected route.
+  const positive = String(text || '').replace(/\b(?:not|isn['’]?t|is not)\s+(?:(?:a|the|about|my)\s+)*(?:payment|billing (?:issue|question|problem))\b/gi, '');
+  return any(positive, WEAK_MONEY);
+}
+
 function looksLikePhone(text) {
   const re = /(?<![\d#])\+?(?:\d[\s().-]*){6,14}\d(?!\d)/g;
   const s = String(text || '');
@@ -253,14 +275,14 @@ function classifyRoute(text) {
   const s = String(text || '');
   const wantHuman = wantsHumanSupport(s);
 
-  if (/\bin order to\b/i.test(s) && !any(s, SHOP) && !any(s, STRONG_MONEY) && !any(s, WEAK_MONEY)) {
+  if (/\bin order to\b/i.test(s) && !any(s, SHOP) && !hasStrongMoney(s) && !hasWeakMoney(s)) {
     return { area: 'unknown', lane: 'faq', escalate: wantHuman, wantHuman };
   }
 
   if (any(s, PRIVACY)) {
     return { area: 'privacy', lane: 'privacy', escalate: true, wantHuman };
   }
-  if (any(s, STRONG_MONEY)) {
+  if (hasStrongMoney(s)) {
     return { area: 'shop', lane: 'money', escalate: true, wantHuman };
   }
   if (looksLikeShippingQuote(s)) {
@@ -285,7 +307,7 @@ function classifyRoute(text) {
   if (conversationPhoneDeleteReply(s)) {
     return { area: 'unknown', lane: 'faq', escalate: wantHuman, wantHuman };
   }
-  if (any(s, FIRMWARE)) {
+  if (any(s, FIRMWARE) || (/\bbattery\b/i.test(s) && !any(s, APP))) {
     const deviceRequest = /\brma\b|\breplacement\s+(?:device|unit|omi)\b/i.test(s);
     return { area: 'firmware', lane: 'firmware', escalate: wantHuman || deviceRequest || looksLikeReportedFailure(s), wantHuman };
   }
@@ -298,7 +320,7 @@ function classifyRoute(text) {
   if (any(s, WEAK_SHOP)) {
     return { area: 'shop', lane: 'shop', escalate: true, wantHuman };
   }
-  if (any(s, WEAK_MONEY)) {
+  if (hasWeakMoney(s)) {
     return { area: 'shop', lane: 'money', escalate: true, wantHuman };
   }
   if (any(s, ACCOUNT)) {
@@ -306,9 +328,9 @@ function classifyRoute(text) {
   }
   if (
     looksLikeDocs(s) &&
-    !any(s, STRONG_MONEY) &&
+    !hasStrongMoney(s) &&
     !any(s, SHOP) &&
-    !any(s, WEAK_MONEY) &&
+    !hasWeakMoney(s) &&
     !any(s, ACCOUNT)
   ) {
     return { area: 'unknown', lane: 'faq', escalate: wantHuman, wantHuman };

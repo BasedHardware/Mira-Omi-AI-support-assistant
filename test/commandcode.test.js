@@ -445,6 +445,8 @@ test('search planning rewrites a follow-up into several source searches', async 
       post: async (_url, body) => {
         assert.equal(body.reasoning_effort, 'low');
         assert.match(body.messages[0].content, /Do not answer the customer/);
+        assert.match(body.messages[0].content, /newest request or correction controls the active goal/);
+        assert.doesNotMatch(body.messages[0].content, /Do not treat the newest sentence as a fresh topic/);
         assert.match(body.messages[1].content, /developer API key/);
         return {
           data: {
