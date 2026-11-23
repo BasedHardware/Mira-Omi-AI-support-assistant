@@ -10,7 +10,8 @@ The same technical owner now recognizes a closed postposed Hindi prohibition for
 - [x] Preserve independent English, comma/semicolon/dash-separated positive-action and misleading-negative controls.
 - [x] Exercise the actual handler with a real technical-review owner, injected provider/official-source fixtures, one private case delivery and final customer output retaining the warning.
 - [x] 1,323 local tests and eight no-model checks pass.
-- [ ] Complete final maintainer review, exact-head CI and the appropriate quality-evidence disposition before readiness.
+- [x] Final maintainer code review and exact-request-hash offline replay: the known q08 warning is restored, with the other11 candidate finals/decisions unchanged relative to the reviewed #110 repair replay. Twenty captured stages, zero provider requests; no fresh accuracy claim.
+- [ ] Exact-head hosted CI and the appropriate quality-evidence disposition before readiness.
 - [ ] Open a draft only when the queue permits; preserve the existing #94/#96/#109/#110 scope.
 - [ ] Merge/release separately under the existing gates; no deployment or customer verification is claimed.
 
