@@ -3835,12 +3835,12 @@ test('custody warning: a romanized Hindi prohibition survives review and final d
   const source = 'https://help.omi.me/en/articles/fixture-preserve-local-recordings';
   docsObserver = async () => `[S1 | Official Help Center | authoritative]\nPreserve recordings\n${source}\nKeep the app installed and preserve local recordings. Do not sign out, reinstall or clear recording storage while recordings are pending.`;
   const warning = 'App installed rehne dein, sign out ya reinstall na karein — warna unsynced recordings kho sakti hain.';
-  modelReply = { final_answer: warning, confidence: 0.9, escalate: true, area: 'app', lane: 'tech' };
+  modelReply = { final_answer: warning, confidence: 0.9, escalate: false, area: 'app', lane: 'tech' };
   reviewerResponse = args => {
     assert.equal(args.lane, 'tech', 'exercise the changed technical safety owner');
     return realReviewAnswer({ ...args, post: async () => ({ data: { choices: [{ message: {
     content: JSON.stringify({ final_answer: warning, grounded: true, relevant: true,
-      confidence: 0.9, escalate: true, sources_used: ['S1'] }),
+      confidence: 0.9, escalate: false, sources_used: ['S1'] }),
     } }] } }) });
   };
   const result = await ask('Omi sync ruk gaya hai aur recordings pending hain. Kisi insaan se jaanch chahiye. Abhi recordings safe kaise rakhein?');
