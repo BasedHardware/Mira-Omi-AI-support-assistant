@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "auditedOn": "2026-11-23",
   "timezone": "Asia/Kolkata",
-  "auditedRuntimeOnMain": "c22ca9338fcbcc26eaa427dfea5c5071aaaf82e8",
+  "auditedRuntimeOnMain": "8f3f7b7bc97e7f635cd4ee4393e474192a13ab51",
   "notAccuracy": true,
   "rubric": "Equal-item technical completion of the original twelve real-thread issues97\u2013108; code on main is separate from release/customer verification.",
   "batch": {
@@ -44,10 +44,11 @@
   },
   "merges": {
     "110": "8674d0e388d0b241df81f6c35b9d0fa21a9ac912",
-    "109": "c22ca9338fcbcc26eaa427dfea5c5071aaaf82e8"
+    "109": "c22ca9338fcbcc26eaa427dfea5c5071aaaf82e8",
+    "113": "8f3f7b7bc97e7f635cd4ee4393e474192a13ab51"
   },
   "mainCI": {
-    "run": 45224394975,
+    "run": 45228073506,
     "node20": "success",
     "node24": "success",
     "postgres": "success"
@@ -59,7 +60,8 @@
     "newFixesAwaitingVerification": 2,
     "productionState": "not_freshly_verified",
     "deploymentRequestedByThisWork": false,
-    "customerResolutionClaimed": false
+    "customerResolutionClaimed": false,
+    "additionalCustodyFilterAwaitingVerification": true
   },
   "comparisons": {
     "A": {
@@ -94,5 +96,15 @@
   "remainingRuntimeDrafts": [
     94,
     96
-  ]
+  ],
+  "caseComparisonCheckpoint": "c22ca9338fcbcc26eaa427dfea5c5071aaaf82e8",
+  "activeRoutingWork": {
+    "issues": [
+      107,
+      103
+    ],
+    "stage": "local_candidate_remaining_gates",
+    "completionCredit": false,
+    "providerGrant": "none"
+  }
 }
