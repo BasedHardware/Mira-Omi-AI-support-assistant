@@ -254,7 +254,7 @@ test('presentation preserves the context independently of successful or failed s
   noInventedReceipt(presented);
   const delivered = escalateReply(presented, { pinged: true, replyInThread: true });
   assert.ok(delivered.includes(fact));
-  assert.equal((delivered.match(/has this now and will reply in this thread/g) || []).length, 1);
+  assert.equal((delivered.match(/has been sent to the support team for review/g) || []).length, 1);
   const failed = escalateReply(presented, { pinged: false, deliveryFailed: true });
   assert.ok(failed.includes(fact));
   assert.doesNotMatch(failed, /has this now|team has accepted/i);

@@ -153,7 +153,7 @@ for (const request of ["What's your order ID?", 'What is your account email so I
 test('removing identifying intake cannot leave an invented direct-message route', () => {
   const shown = escalateReply('Please provide your order ID. DM me those details.', { pinged: true });
   assert.doesNotMatch(shown, /provide your order ID|DM me/i);
-  assert.match(shown, /team member will ask privately/);
+  assert.match(shown, /existing private conversation with support/);
 });
 
 test('safe evidence request with hidden identifiers is retained, alongside a retained warning', () => {
@@ -197,7 +197,7 @@ test('alternative direct-message collection routes are removed but protective ne
   for (const route of ['Send those details to me in a DM.', 'You can PM me the details.']) {
     const shown = escalateReply(`Please post your order ID. ${route}`, { pinged: true });
     assert.ok(!shown.includes(route));
-    assert.equal((shown.match(/team member will ask privately/g) || []).length, 1);
+    assert.equal((shown.match(/existing private conversation with support/g) || []).length, 1);
   }
   const warning = 'Do not DM me those details.';
   assert.ok(presentReviewedAnswer(warning, { question: 'My order has not arrived.' }).includes(warning));
@@ -220,7 +220,7 @@ test('the complete recording-custody warning survives final private guidance and
     assert.ok(shown.includes(UNSYNCED_DATA_WARNING));
     assert.ok(shown.includes(official));
     assert.ok(shown.includes('<#100000000000000321>'));
-    assert.equal((shown.match(/team member will ask privately/g) || []).length, 1);
+    assert.equal((shown.match(/existing private conversation with support/g) || []).length, 1);
   }
 });
 

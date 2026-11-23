@@ -50,7 +50,8 @@ test('planned staff handoff tells both answer and review to keep the customer in
     await queryAgent({
       question: 'Where is my shipment?', route: { area: 'shop', lane: 'shop', escalate: true },
       post: async (_url, body) => {
-        assert.match(body.messages[0].content, /person from the Omi team will reply in this thread/i);
+        assert.match(body.messages[0].content, /neither guarantees investigation, a future response or timing/i);
+        assert.doesNotMatch(body.messages[0].content, /person from the Omi team will reply in this thread/i);
         assert.match(body.messages[0].content, /Don't tell the customer to contact support, email, use a contact form or post in another channel/i);
         return { data: { choices: [{ message: { content: '{"final_answer":"Check the tracking link.","confidence":0.8,"escalate":true}' } }] } };
       },
@@ -60,7 +61,8 @@ test('planned staff handoff tells both answer and review to keep the customer in
       sources: '[S1 | Help]\nhttps://help.omi.me/shipping\nCheck the carrier tracking link.',
       lane: 'shop', handoffPlanned: true,
       post: async (_url, body) => {
-        assert.match(body.messages[0].content, /person from the Omi team will reply in this thread/i);
+        assert.match(body.messages[0].content, /neither guarantees investigation, a future response or timing/i);
+        assert.doesNotMatch(body.messages[0].content, /person from the Omi team will reply in this thread/i);
         assert.match(body.messages[0].content, /Don't tell the customer to contact support, email, use a contact form or post in another channel/i);
         return { data: { choices: [{ message: { content: '{"final_answer":"Check the tracking link.","grounded":true,"relevant":true,"sources_used":["S1"]}' } }] } };
       },
@@ -102,7 +104,7 @@ test('the answer keeps communication guidance while both review efforts keep onl
     assert.match(system, /final relevance and grounding gate/i);
     assert.match(system, /Check every concrete claim, instruction, UI path/i);
     assert.match(system, /Never suggest reinstalling or logging out with possible unsynced recordings/i);
-    assert.match(system, /delivery succeeds/i);
+    assert.match(system, /neither guarantees investigation, a future response or timing/i);
     assert.match(system, /"grounded":true,"relevant":true/);
   }
   assert.equal(reviewed.grounded, true);

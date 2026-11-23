@@ -26,7 +26,7 @@ for (const [kind, route, question, subject] of cases) {
     assert.doesNotMatch(body, /(?:has this now|will reply|email help@omi\.me|assigned|approved|guaranteed)/i);
 
     const delivered = escalateReply(body, { pinged: true, replyInThread: true });
-    assert.match(delivered, /will reply in this thread/i);
+    assert.match(delivered, /sent to the support team for review/i);
     assert.doesNotMatch(delivered, /help@omi\.me|contact support/i);
     if (kind === 'order') {
       assert.match(delivered, /Use \/order to check your own orders privately/i);
@@ -34,7 +34,7 @@ for (const [kind, route, question, subject] of cases) {
     } else {
       assert.doesNotMatch(delivered, /\/order\b/i);
     }
-    assert.equal((delivered.match(/will reply in this thread/gi) || []).length, 1);
+    assert.equal((delivered.match(/sent to the support team for review/gi) || []).length, 1);
 
     const failed = escalateReply(body, { deliveryFailed: true });
     assert.match(failed, /Please email help@omi\.me/i);
@@ -59,7 +59,7 @@ test('unavailable private order lookup keeps the delivery-aware fallback without
     assert.match(reply, /keep your address and payment details private/i);
     assert.doesNotMatch(reply, /\/order\b|email a code/i);
   }
-  assert.match(delivered, /will reply in this thread/i);
+  assert.match(delivered, /sent to the support team for review/i);
   assert.doesNotMatch(delivered, /help@omi\.me|contact support/i);
   assert.match(failed, /Please email help@omi\.me/i);
   assert.equal((failed.match(/help@omi\.me/gi) || []).length, 1);
@@ -89,7 +89,7 @@ test('an unavailable answer service is honest without promising an undelivered h
     assert.equal(down.agent.escalate, true);
     assert.match(down.reply, /Automated answers are temporarily unavailable/i);
     assert.doesNotMatch(down.reply, /^I can|a person will|has this now|will reply|recover|within \d/i);
-    assert.match(escalateReply(down.reply, { pinged: true, replyInThread: true }), /will reply in this thread/i);
+    assert.match(escalateReply(down.reply, { pinged: true, replyInThread: true }), /sent to the support team for review/i);
     const failed = escalateReply(down.reply, { deliveryFailed: true });
     assert.match(failed, /Please email help@omi\.me/i);
     assert.doesNotMatch(failed, /will reply/i);
