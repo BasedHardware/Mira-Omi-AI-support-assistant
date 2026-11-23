@@ -1,5 +1,7 @@
 # Mira operations runbook
 
+**Shared-post staff context:** use Discord Reply on the relevant customer's message or mention their Discord account for case-specific notes. A display name alone cannot establish an old finding's recipient. Keep private account/order details in the approved private exchange. This offline integration adds no command, staff workflow or permission; rollout and customer verification remain separate.
+
 **November23:** Main130319d; production not freshly checked. #98's candidate reports only the current case's recorded event: sent for review, accepted for review, unconfirmed or failed delivery. It makes no investigation, reply or timing promise. [State/copy checklist](HANDOFF_STATE_COPY.md). #100 draft109 is separate; #94/#96 remain unfinished. Current-head CI, independent review and specifically approved comparisons precede readiness; no quota, deployment, optional enablement or Discord input is activated by this checkpoint. The [master plan](SUPPORT_MASTER_PLAN.md) supersedes older states below.
 
 **November23 comparison hold:** A completed with41 requests and failed the relative gate; B was not launched. The q04 fix is offline regression-tested only. Do not reuse the consumed A grant, run B against stale H/I sources, deploy, send Discord tests or enable optional features. Aryan directed maintainer self-review; do not claim it was independent. [Findings](HANDOFF_COMPARISON_2026-11-23.md).

@@ -45,6 +45,7 @@ let modelDown = false;
 let searchPlanQueries = [];
 let plannerSubQuestions = [];
 const plannerCalls = [];
+const plannerInputs = [];
 let plannerSupportKind = 'other';
 let plannerMessageKind = 'question';
 let plannerStandaloneQuestion = '';
@@ -73,7 +74,9 @@ commandcode.queryAgent = async (args) => {
     ...modelReply,
   };
 };
-commandcode.understandQuestion = async ({ question, onUsage }) => {
+commandcode.understandQuestion = async (args) => {
+  const { question, onUsage } = args;
+  plannerInputs.push(args);
   plannerCalls.push(question);
   if (emitTestUsage) onUsage?.({ stage: 'planner', completionTokens: 20, reasoningTokens: 5 });
   if (plannerBarrier) await plannerBarrier;
@@ -797,6 +800,7 @@ test.beforeEach(() => {
   searchPlanQueries = [];
   plannerSubQuestions = [];
   plannerCalls.length = 0;
+  plannerInputs.length = 0;
   plannerSupportKind = 'other';
   plannerMessageKind = 'question';
   plannerStandaloneQuestion = '';
@@ -2889,6 +2893,53 @@ test('a later customer message is not copied onto the public GitHub issue', asyn
   github.resetGithubMemory();
 });
 
+test('shared-thread findings reach only their addressed customer at every answer boundary', async t => {
+  const priorKey = process.env.CMD_API_KEY;
+  t.after(() => { process.env.CMD_API_KEY = priorKey; });
+  process.env.CMD_API_KEY = 'synthetic-scope-key';
+  const post = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Device connection' });
+  const alice = nextId(), bob = nextId(), staff = nextId();
+  process.env.STAFF_USER_IDS = staff;
+  const opening = makeMessage('My Android pendant disconnects. SYNTHETIC-ALICE-DETAIL.', { channel: post, authorId: alice });
+  opening.author.username = 'fictional_alice';
+  const finding = makeMessage('The account check found a registration problem. SYNTHETIC-ALICE-FINDING.', { channel: post, authorId: staff });
+  finding.reference = { messageId: opening.id };
+  const bobOpening = makeMessage('My iPhone pendant disconnects; I already restarted. SYNTHETIC-BOB-ATTEMPT.', { channel: post, authorId: bob });
+  bobOpening.author.username = 'fictional_bob';
+  const follow = makeMessage('What should I do about my connection?', { channel: post, authorId: bob });
+  follow.author.username = 'fictional_bob';
+  post.messages.fetch = async () => new Map([follow, bobOpening, finding, opening].map(row => [row.id, row]));
+  await handleMessage(follow);
+  assert.ok(modelCalls.length && reviewCalls.length && plannerInputs.length);
+  for (const input of [plannerInputs.at(-1), modelCalls.at(-1), reviewCalls.at(-1)]) {
+    const text = JSON.stringify(input);
+    assert.doesNotMatch(text, /SYNTHETIC-ALICE/);
+    assert.match(text, /SYNTHETIC-BOB-ATTEMPT/);
+  }
+
+  const aliceFollow = makeMessage('What should I do about my connection now?', { channel: post, authorId: alice });
+  aliceFollow.author.username = 'fictional_alice';
+  post.messages.fetch = async () => new Map([aliceFollow, follow, bobOpening, finding, opening].map(row => [row.id, row]));
+  await handleMessage(aliceFollow);
+  assert.match(JSON.stringify(modelCalls.at(-1).threadHistory), /SYNTHETIC-ALICE-FINDING/);
+  assert.doesNotMatch(JSON.stringify(modelCalls.at(-1)), /SYNTHETIC-BOB/);
+});
+
+test('another customer and their post title cannot supply a protected route', async t => {
+  const priorKey = process.env.CMD_API_KEY;
+  t.after(() => { process.env.CMD_API_KEY = priorKey; });
+  process.env.CMD_API_KEY = 'synthetic-scope-key';
+  const post = makeChannel({ thread: true, parentId: HELP_FORUM, name: 'Refund for a duplicate payment' });
+  const other = makeMessage('I paid twice and need a refund. SYNTHETIC-FOREIGN-MONEY.', { channel: post });
+  post.ownerId = other.author.id;
+  const follow = makeMessage('My Omi pendant disconnects from my iPhone; how can I pair it?', { channel: post });
+  post.messages.fetch = async () => new Map([follow, other].map(row => [row.id, row]));
+  await handleMessage(follow);
+  assert.ok(modelCalls.length, 'current technical request must reach the answer flow');
+  assert.notEqual(modelCalls.at(-1).route.lane, 'money');
+  assert.doesNotMatch(JSON.stringify(plannerInputs.at(-1)), /SYNTHETIC-FOREIGN-MONEY/);
+});
+
 test('a follow-up in a Handoff thread sends the earlier thread messages to the model, oldest first', async () => {
   modelReply = { final_answer: 'Thanks. Does it also drop when the phone is on wifi?' };
   const handoff = makeChannel({
@@ -2897,15 +2948,18 @@ test('a follow-up in a Handoff thread sends the earlier thread messages to the m
     name: 'Handoff · app · tech · iPhone app disconnected',
   });
   const follow = makeMessage('It happened again this morning after the update.', { channel: handoff });
+  const staffId = nextId();
+  process.env.STAFF_USER_IDS = staffId;
   handoff.messages.fetch = async () =>
     new Map([
       [follow.id, follow],
-      ['3', { id: '3', author: { bot: false, username: 'staff' }, content: 'Which iOS version are you on?' }],
-      ['2', { id: '2', author: { bot: true, username: 'omi' }, content: 'A person has this now.' }],
-      ['1', { id: '1', author: { bot: false, username: 'customer' }, content: 'My iPhone app disconnects daily.' }],
+      ['3', { id: '3', author: { id: staffId, bot: false, username: 'staff' }, reference: { messageId: '1' }, content: 'Which iOS version are you on?' }],
+      ['2', { id: '2', author: { id: BOT_ID, bot: true, username: 'omi' }, reference: { messageId: '1' }, content: 'A person has this now.' }],
+      ['1', { id: '1', author: { id: follow.author.id, bot: false, username: 'customer' }, content: 'My iPhone app disconnects daily.' }],
     ]);
   await handleMessage(follow);
-  assert.deepEqual(modelCalls.at(-1).threadHistory, [
+  assert.ok(modelCalls.at(-1).threadHistory.every(row => row.caseContext === 'current_customer'));
+  assert.deepEqual(modelCalls.at(-1).threadHistory.map(({ author, content }) => ({ author, content })), [
     { author: 'customer', content: 'My iPhone app disconnects daily.' },
     { author: 'bot', content: 'A person has this now.' },
     { author: 'staff', content: 'Which iOS version are you on?' },
@@ -2929,10 +2983,11 @@ test('a follow-up in a vector-test post sees the report and does not open a seco
   post.messages.fetch = async () =>
     new Map([
       [follow.id, follow],
-      ['1', { id: '1', author: { bot: false, username: 'customer' }, content: 'Upgrade to Unlimited downgraded my paid account to Free.' }],
+      ['1', { id: '1', author: { id: follow.author.id, bot: false, username: 'customer' }, content: 'Upgrade to Unlimited downgraded my paid account to Free.' }],
     ]);
   await handleMessage(follow);
-  assert.deepEqual(modelCalls.at(-1).threadHistory, [
+  assert.ok(modelCalls.at(-1).threadHistory.every(row => row.caseContext === 'current_customer'));
+  assert.deepEqual(modelCalls.at(-1).threadHistory.map(({ author, content }) => ({ author, content })), [
     { author: 'customer', content: 'Upgrade to Unlimited downgraded my paid account to Free.' },
   ]);
   assert.equal(post.sent.length, 0);
@@ -3013,7 +3068,8 @@ test('a same-customer direct reply continues a mentioned support exchange withou
   await handleMessage(follow);
 
   assert.equal(modelCalls.length, before + 1);
-  assert.deepEqual(modelCalls.at(-1).threadHistory, [
+  assert.ok(modelCalls.at(-1).threadHistory.every(row => row.caseContext === 'current_customer'));
+  assert.deepEqual(modelCalls.at(-1).threadHistory.map(({ author, content }) => ({ author, content })), [
     { author: 'customer', content: 'How do I pair Omi with my phone?' },
     { author: 'bot', content: 'Hold the center button for ten seconds, then pair it again from the app.' },
   ]);
@@ -3219,6 +3275,11 @@ test('same-problem follow-up retrieves from the full thread and keeps completed 
     content: 'I already emailed support and sent diagnostics.',
   };
   const follow = makeMessage("I'm having the same problem too.", { channel: post });
+  // This regression is one continuing customer's case. Distinct reporters'
+  // attempts are deliberately excluded by the shared-thread tests above.
+  earlier.author.id = follow.author.id;
+  diagnostics.author.id = follow.author.id;
+  post.ownerId = follow.author.id;
   post.messages.fetch = async () =>
     new Map([
       [follow.id, follow],
@@ -3255,6 +3316,9 @@ test('a model-down storage follow-up answers app versus phone versus device from
       'Pull request #20172 has been merged. https://github.com/BasedHardware/omi/pull/20172',
   };
   const follow = makeMessage('Does that remove from APP, PHONE, or DEVICE?', { channel: post });
+  opening.author.id = follow.author.id;
+  priorBot.reference = { messageId: opening.id };
+  post.ownerId = follow.author.id;
   post.messages.fetch = async () =>
     new Map([
       [follow.id, follow],
