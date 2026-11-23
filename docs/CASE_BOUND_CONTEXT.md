@@ -1,6 +1,6 @@
 # Keep support context with its customer
 
-November23,2026. #100/#109 is stacked on the reviewed #98/#110 handoff repair. This document records the case-attribution boundary, not deployment, staff receipt or customer recovery.
+November23,2026. #100/#109 merged as c22ca93 after #98/#110; the technical issue is closed and release is tracked separately in #111. This document records the case-attribution boundary, not deployment, staff receipt or customer recovery.
 
 The old history reader flattened all shared-thread participants into display-name prose. That prose reached current-question construction, routing, planning and review, allowing another customer's device or staff finding to become the current case. The repair projects raw Discord messages by stable customer ID before those owners use the history.
 
@@ -22,4 +22,4 @@ Raw staff-reason metadata can still contain unsupported attempted-step or absenc
 
 B manifest `5c33e6ad2d21554b963eb1d7c093de9a56e29550f7590358d5ba83337f7db6a2`; final run SHA-256 `d6879550c549de87d14d6fcc0ba9ee577ba01aeeb4ed64cd800e6bdaa8fcf515`. Full raw evidence and the per-case grade remain private; no real customer data was used. The replacement A/B pair used84 requests against its192 ceiling; both one-run grants are consumed. No automatic rerun, merge, deployment or optional enablement follows.
 
-Keep current-head CI, public integration review, merge and manual release separate. Existing #94/#96 and all other real-thread requirements remain open at their actual stage. No issue is assigned or closed by this document.
+Public integration review, exact-head checks and merged-main Node20/24/PostgreSQL CI pass; JavaScript/JSON matches the graded integration. Merge is complete. Keep manual release/customer verification separate in #111. Existing #94/#96 and all other real-thread requirements remain open at their actual stage. No issue is assigned; #98/#100 were closed as code-complete with the separate release dependency retained.

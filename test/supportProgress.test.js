@@ -22,7 +22,7 @@ test('the fixed support progress rubric keeps 25 distinct milestone IDs and orde
 test('support dashboard totals are calculated from the evidence ledger, not PR counts', () => {
   const totals = ['onMain', 'tested', 'reviewed', 'liveVerified'].map(key => ledger.milestones.filter(row => row[key]).length);
   const done = totals.reduce((sum, count) => sum + count, 0);
-  assert.match(plan, new RegExp(`## Current score — ${done} / 100 done, ${100 - done} / 100 left`));
+  assert.match(plan, new RegExp(`## Dated product milestone rubric — ${done} / 100 delivered, ${100 - done} / 100 left`));
   assert.ok(plan.includes(`${totals[0]} main + ${totals[1]} tested + ${totals[2]} reviewed + ${totals[3]} verified operations`));
   assert.match(plan, /not answer accuracy/);
 });
