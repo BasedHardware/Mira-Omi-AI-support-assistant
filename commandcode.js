@@ -573,13 +573,20 @@ const UNSAFE_TECH_STEP = /\b(?:re-?install(?:ing)?|uninstall(?:ing)?|log(?:ging)
 const OFFICIAL_STEP_URL = /^https:\/\/(?:help|docs)\.omi\.me\//i;
 const OFFICIAL_RELEASE_URL = /^https:\/\/github\.com\/BasedHardware\/omi\/releases\/tag\//i;
 
-function recommendsUnsafeAction(sentence) {
+function recommendsUnsafeAction(sentence, language = 'en') {
   for (const match of String(sentence || '').matchAll(UNSAFE_TECH_STEP)) {
     const before = String(sentence).slice(0, match.index);
     const clausePrefix = before.split(/[,;:]|\bbut\b/i).at(-1).trim();
     const directlyNegated = /\b(?:do\s+not|don['’]t|never|avoid|should\s+not|must\s+not|not\s+to)\s*(?:(?:ever|even|try\s+to|attempt\s+to|consider)\s*)?$/i.test(clausePrefix);
     const sharedNegation = /^(?:please\s+)?(?:do\s+not|don['’]t|never|avoid)\b/i.test(clausePrefix) && /\bor\s*$/i.test(clausePrefix);
-    if (!directlyNegated && !sharedNegation) return true;
+    // Romanized Hindi commonly puts the prohibition after the action. Bind
+    // it to this action and a closed coordination of actions, never to any
+    // convenient negative word elsewhere in the reply. Unknown suffixes keep
+    // the conservative unsafe classification.
+    const suffix = String(sentence).slice(match.index + match[0].length).split(/[,;:.!?—–\n]/u)[0];
+    const postposedNegation = String(language).toLowerCase().split('-')[0] === 'hi' &&
+      /^(?:\s+(?:ya|aur|or)\s+(?:re-?install(?:ing)?|uninstall(?:ing)?|log(?:ging)?\s*out|sign(?:ing)?\s*out))*\s+(?:na|nahi|nahin|mat)\s+(?:karein|karen|karo|karna)\s*$/iu.test(suffix);
+    if (!directlyNegated && !sharedNegation && !postposedNegation) return true;
   }
   return false;
 }
@@ -602,7 +609,7 @@ function technicalReviewSafety(answer, lane, sources, sourceIds = [], { question
     }
     const surviving = [];
     for (const sentence of line.split(/(?<=[.!?])\s+/).map((part) => part.trim()).filter(Boolean)) {
-      const unsafe = recommendsUnsafeAction(sentence);
+      const unsafe = recommendsUnsafeAction(sentence, language);
       const instruction = isInstructionSentence(sentence);
       const releaseUpdate = /^\s*(?:[-*]\s*)?update\b/i.test(sentence) && hasReleaseCitation;
       if (unsafe || (instruction && !hasOfficialCitation && !releaseUpdate)) dropped.push(sentence);
@@ -630,7 +637,7 @@ function technicalReviewSafety(answer, lane, sources, sourceIds = [], { question
     answer: fallback && officialLinks.length ? `${body}\n\nSource: ${officialLinks.join(' ')}` : body,
     escalate: true,
     fallback,
-    reason: dropped.some(recommendsUnsafeAction)
+    reason: dropped.some(sentence => recommendsUnsafeAction(sentence, language))
       ? 'Unsafe data-loss or firmware step removed'
       : 'Troubleshooting step lacked a cited Help Center or docs page',
   };

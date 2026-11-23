@@ -2,6 +2,8 @@
 
 ## Current checkpoint — November 23, 2026 (IST)
 
+**Separate local warning preparation:** the shared q08 custody-warning loss is reproduced and repaired through a bounded Hindi postposed-negation rule in the existing technical safety owner. 1,323 local tests and eight no-model checks pass, including the actual technical-review handler boundary. It is outside the frozen #110/#109 comparisons, has no new PR and earns no main completion credit. Final review/CI/quality disposition and queue space remain before readiness. [Checklist](ROMANIZED_CUSTODY_WARNING.md).
+
 Fresh GitHub baseline is **130319dfc5b1e62a53970507dbd2c3b0459d18ba**, including #91/#90/#93/#95/#92. Production has not been freshly checked. The October deployment paragraphs below are historical and must not be read as current health evidence. Existing #94/#96 drafts retain their unfinished requirements.
 
 The real-thread batch #97–#108 remains **0/12 completed on main: 0/100 done, 100/100 outstanding**, an equal-item completion count, not model accuracy. The older product milestone scores are dated assessments, not current accuracy measurements. [The twelve-issue audit](https://github.com/BasedHardware/Mira-Omi-AI-support-assistant/blob/codex/case-bound-thread-context/docs/REAL_THREAD_RELIABILITY_AUDIT_2026-11-23.md) preserves each separate defect; none is dropped or closed for appearance.
